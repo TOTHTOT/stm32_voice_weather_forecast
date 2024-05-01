@@ -68,6 +68,8 @@ void Error_Handler(void);
 #define LD3320_RX_GPIO_Port GPIOB
 #define LD3320_TX_Pin GPIO_PIN_11
 #define LD3320_TX_GPIO_Port GPIOB
+#define SYN6288_BUSY_IO_Pin GPIO_PIN_8
+#define SYN6288_BUSY_IO_GPIO_Port GPIOA
 #define SYN6288_RX_Pin GPIO_PIN_9
 #define SYN6288_RX_GPIO_Port GPIOA
 #define SYN6288_TX_Pin GPIO_PIN_10

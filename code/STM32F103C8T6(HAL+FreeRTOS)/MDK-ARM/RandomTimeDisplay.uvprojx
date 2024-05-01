@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../HARDWARE/KEY;../HARDWARE/LED;../SYSTEM/delay;../HARDWARE/USART;../SYSTEM/usart;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../HARDWARE/KEY;../HARDWARE/LED;../SYSTEM/delay;../HARDWARE/USART;../SYSTEM/usart;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../HARDWARE/SYN6288;../HARDWARE/OLED</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -393,6 +393,11 @@
         <Group>
           <GroupName>Application/User/Core</GroupName>
           <Files>
+            <File>
+              <FileName>stm32_voice_weather_forecast.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\stm32_voice_weather_forecast.c</FilePath>
+            </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
@@ -555,6 +560,16 @@
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\LED\led.c</FilePath>
             </File>
+            <File>
+              <FileName>syn6288.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\SYN6288\syn6288.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\OLED\oled.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -571,9 +586,6 @@
               <FilePath>..\SYSTEM\usart\usart1.c</FilePath>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>::CMSIS</GroupName>
         </Group>
         <Group>
           <GroupName>Drivers/STM32F1xx_HAL_Driver</GroupName>
@@ -2252,6 +2264,9 @@
               </FileOption>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
     </Target>

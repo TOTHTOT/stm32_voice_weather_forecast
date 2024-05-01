@@ -34,6 +34,7 @@
 #include "string.h"
 #include <stdio.h>
 #include "usart1.h"
+#include "stm32_voice_weather_forecast.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,7 +60,10 @@ osThreadId defaultTaskHandle;
 osThreadId LED_TASKHandle;
 osThreadId KEY_TASKHandle;
 osThreadId USART1_TASKHandle;
+osTimerId time_1sHandle;
+osTimerId esp_uartrecv_timHandle;
 osSemaphoreId Usart1_Receive_BinSemaphoreHandle;
+osSemaphoreId oled_refreashHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -70,11 +74,16 @@ void StartDefaultTask(void const * argument);
 void led_task(void const * argument);
 void key_task(void const * argument);
 void usart1_task(void const * argument);
+void time_1s_cb(void const * argument);
+void esp_uartrecv_tim_cb(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* GetTimerTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -89,6 +98,19 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 }
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
+/* USER CODE BEGIN GET_TIMER_TASK_MEMORY */
+static StaticTask_t xTimerTaskTCBBuffer;
+static StackType_t xTimerStack[configTIMER_TASK_STACK_DEPTH];
+
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+{
+  *ppxTimerTaskTCBBuffer = &xTimerTaskTCBBuffer;
+  *ppxTimerTaskStackBuffer = &xTimerStack[0];
+  *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+  /* place for user code */
+}
+/* USER CODE END GET_TIMER_TASK_MEMORY */
+
 /**
   * @brief  FreeRTOS initialization
   * @param  None
@@ -100,7 +122,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-    /* add mutexes, ... */
+  /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
@@ -108,17 +130,30 @@ void MX_FREERTOS_Init(void) {
   osSemaphoreDef(Usart1_Receive_BinSemaphore);
   Usart1_Receive_BinSemaphoreHandle = osSemaphoreCreate(osSemaphore(Usart1_Receive_BinSemaphore), 1);
 
+  /* definition and creation of oled_refreash */
+  osSemaphoreDef(oled_refreash);
+  oled_refreashHandle = osSemaphoreCreate(osSemaphore(oled_refreash), 1);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-    /* add semaphores, ... */
+  /* add semaphores, ... */
     xSemaphoreTake(Usart1_Receive_BinSemaphoreHandle, portMAX_DELAY);
   /* USER CODE END RTOS_SEMAPHORES */
 
+  /* Create the timer(s) */
+  /* definition and creation of time_1s */
+  osTimerDef(time_1s, time_1s_cb);
+  time_1sHandle = osTimerCreate(osTimer(time_1s), osTimerPeriodic, NULL);
+
+  /* definition and creation of esp_uartrecv_tim */
+  osTimerDef(esp_uartrecv_tim, esp_uartrecv_tim_cb);
+  esp_uartrecv_timHandle = osTimerCreate(osTimer(esp_uartrecv_tim), osTimerPeriodic, NULL);
+
   /* USER CODE BEGIN RTOS_TIMERS */
-    /* start timers, add new ones, ... */
+  /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-    /* add queues, ... */
+  /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -139,82 +174,82 @@ void MX_FREERTOS_Init(void) {
   USART1_TASKHandle = osThreadCreate(osThread(USART1_TASK), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-    /* add threads, ... */
+  /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-    /* Infinite loop */
-    for (;;)
-    {
-        osDelay(1);
-    }
+  stm32_voice_weather_forecast_init(&g_stm32_voice_weather_forecast_st);
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(10);
+  }
   /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_led_task */
 /**
- * @brief Function implementing the LED_TASK thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the LED_TASK thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_led_task */
 void led_task(void const * argument)
 {
   /* USER CODE BEGIN led_task */
-    /* Infinite loop */
-    for (;;)
-    {
-        INFO_PRINT("led\r\n");
+  /* Infinite loop */
+  for(;;)
+  {
+        // INFO_PRINT("led\r\n");
         LED0_TOGGLE;
         delay_ms(500);
-    }
+  }
   /* USER CODE END led_task */
 }
 
 /* USER CODE BEGIN Header_key_task */
 /**
- * @brief Function implementing the KEY_TASK thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the KEY_TASK thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_key_task */
 void key_task(void const * argument)
 {
   /* USER CODE BEGIN key_task */
-    /* Infinite loop */
-    for (;;)
-    {
-
-        osDelay(1);
-    }
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
   /* USER CODE END key_task */
 }
 
 /* USER CODE BEGIN Header_usart1_task */
 /**
- * @brief Function implementing the USART1_TASK thread.
- * @param argument: Not used
- * @retval None
- */
+* @brief Function implementing the USART1_TASK thread.
+* @param argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_usart1_task */
 void usart1_task(void const * argument)
 {
   /* USER CODE BEGIN usart1_task */
     uint8_t len;
-    /* Infinite loop */
-    for (;;)
-    {
+  /* Infinite loop */
+  for(;;)
+  {
         xSemaphoreTake(Usart1_Receive_BinSemaphoreHandle, portMAX_DELAY);
         len = USART_RX_STA & 0x3fff; // get lenth of the data
         printf("data:%s len:%d\r\n", USART_RX_BUF, len);
@@ -222,8 +257,24 @@ void usart1_task(void const * argument)
         USART_RX_STA = 0;
         // osDelay(1);
         delay_ms(1);
-    }
+  }
   /* USER CODE END usart1_task */
+}
+
+/* time_1s_cb function */
+void time_1s_cb(void const * argument)
+{
+  /* USER CODE BEGIN time_1s_cb */
+
+  /* USER CODE END time_1s_cb */
+}
+
+/* esp_uartrecv_tim_cb function */
+void esp_uartrecv_tim_cb(void const * argument)
+{
+  /* USER CODE BEGIN esp_uartrecv_tim_cb */
+
+  /* USER CODE END esp_uartrecv_tim_cb */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -231,4 +282,3 @@ void usart1_task(void const * argument)
 
 /* USER CODE END Application */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
