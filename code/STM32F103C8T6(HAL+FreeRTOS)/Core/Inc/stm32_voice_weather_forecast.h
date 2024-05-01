@@ -2,7 +2,7 @@
  * @Description: 
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:37
- * @LastEditTime: 2024-05-01 19:58:59
+ * @LastEditTime: 2024-05-01 20:50:50
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Inc\stm32_voice_weather_forecast.h
  */
@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include "usart1.h"
 #include "syn6288.h"
-#include "oled.h"
+#include "stm32_u8g2.h"
 
 /* 宏定义 */
 #define DEVICE_BUILD_DATE __DATE__
@@ -44,7 +44,7 @@ typedef struct stm32_voice_weather_forecast
     struct devices
     {
         syn6288_device_t *p_syn6288_dev_st;
-        struct oled_device *p_oled_dev_st;
+        u8g2_t u8g2;
     } devices_info;
 
     struct weather_info

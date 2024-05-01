@@ -7,18 +7,28 @@
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
 #include "stm32_voice_weather_forecast.h"
+#include "delay.h"
+#include "test_u8g2.h"
 
 /* 全局变量 */
 stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
     .devices_info.p_syn6288_dev_st = &g_syn6288_device_st,
-    .devices_info.p_oled_dev_st = &g_oled_device_st,
+    //.devices_info.p_oled_dev_st = &g_oled_device_st,
 };
 
 uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_st)
 {
     INFO_PRINT("stm32_voice_weather_forecast: %s, %s\n", DEVICE_BUILD_DATE, DEVICE_BUILD_TIME);
 
-    OLED_Init(p_dev_st->devices_info.p_oled_dev_st);
+    u8g2Init(&p_dev_st->devices_info.u8g2);
+    u8g2_FirstPage(&p_dev_st->devices_info.u8g2);
+      do
+      {
+          draw(&p_dev_st->devices_info.u8g2);
+
+          u8g2DrawTest(&p_dev_st->devices_info.u8g2);
+      } while (u8g2_NextPage(&p_dev_st->devices_info.u8g2));
+
 	delay_xms(100);
     p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, (uint8_t *)"你好");
     return 0;
