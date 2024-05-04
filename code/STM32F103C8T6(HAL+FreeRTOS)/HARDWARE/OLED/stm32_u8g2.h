@@ -28,8 +28,10 @@
 /* USER CODE BEGIN Prototypes */
 uint8_t u8x8_byte_hw_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr);
 uint8_t u8x8_gpio_and_delay(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr);
-void u8g2Init(u8g2_t *u8g2);
-void draw(u8g2_t *u8g2);
+void u8g2_init(u8g2_t *u8g2);
+void u8g2_draw(u8g2_t *u8g2);
 void testDrawPixelToFillScreen(u8g2_t *u8g2);
-
+/* 用户代码开始 */
+extern uint8_t u8g2_refresh_scr(void *private_data);
+/* 用户代码结束 */
 #endif

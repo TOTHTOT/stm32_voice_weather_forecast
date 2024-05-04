@@ -2,7 +2,7 @@
  * @Description: 
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:37
- * @LastEditTime: 2024-05-01 20:50:50
+ * @LastEditTime: 2024-05-04 17:10:35
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Inc\stm32_voice_weather_forecast.h
  */
@@ -17,15 +17,11 @@
 #include "usart1.h"
 #include "syn6288.h"
 #include "stm32_u8g2.h"
+#include "esp_at_cmd.h"
 
 /* 宏定义 */
 #define DEVICE_BUILD_DATE __DATE__
 #define DEVICE_BUILD_TIME __TIME__
-#define ESP_01S_WIFI_NAME "esp-2.4G"    // esp 连接wifi名称
-#define ESP_01S_WIFI_PASSWORD "12345678"    // esp 连接wifi密码
-#define ESP_01S_SERVER_IP "192.168.1.100"
-#define ESP_01S_SERVER_PORT 8080
-#define ESP_01S_REQUEST_URL "/api/weather/now.json?location=beijing&key=1234567890"
 
 
 /* 类型定义 */
@@ -45,16 +41,18 @@ typedef struct stm32_voice_weather_forecast
     {
         syn6288_device_t *p_syn6288_dev_st;
         u8g2_t u8g2;
+        esp_at_t *p_esp_at_dev_st;
     } devices_info;
 
     struct weather_info
     {
-        uint8_t temperature;   // 温度
-        uint8_t humidity;      // 湿度
-        uint8_t weather;       // 天气
-        uint8_t wind_speed;    // 风速
-        time_info_t time_info; // 时间
+        float temperature;   // 温度
+        float humidity;      // 湿度
+        uint8_t weather[10]; // 天气
+        uint8_t wind_speed;  // 风速
     } weather_info_st[3];
+    time_info_t time_info;               // 时间
+    uint8_t cur_show_weather_info_index; // 当前显示的天气, 0: 昨天, 1: 今天, 2: 明天;
 
     bool system_is_ready; // == true 表示系统已经初始化完成, 其他任务才能开始执行
 } stm32_voice_weather_forecast_t;

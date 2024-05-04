@@ -186,16 +186,30 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+void StartDefaultTask(void const *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
-  stm32_voice_weather_forecast_init(&g_stm32_voice_weather_forecast_st);
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(10);
-  }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE BEGIN StartDefaultTask */
+    uint32_t loop_times = 0;
+    if (stm32_voice_weather_forecast_init(&g_stm32_voice_weather_forecast_st) != 0)
+    {
+        g_stm32_voice_weather_forecast_st.system_is_ready = false;
+        return;
+    }
+    g_stm32_voice_weather_forecast_st.system_is_ready = true;
+    /* Infinite loop */
+    for (;;)
+    {
+        if (g_stm32_voice_weather_forecast_st.system_is_ready != true)
+            osDelay(10000);
+
+        if (loop_times >= 10)
+        {
+            u8g2_refresh_scr(&g_stm32_voice_weather_forecast_st);
+        }
+        loop_times++;
+        osDelay(10);
+    }
+    /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_led_task */

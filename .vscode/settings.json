@@ -64,6 +64,10 @@
     "oled.h": "c",
     "main.h": "c",
     "u8g2.h": "c",
-    "stm32_u8g2.h": "c"
+    "stm32_u8g2.h": "c",
+    "limits": "c",
+    "test_u8g2.h": "c",
+    "esp_at_cmd.h": "c",
+    "stdbool.h": "c"
   }
 }

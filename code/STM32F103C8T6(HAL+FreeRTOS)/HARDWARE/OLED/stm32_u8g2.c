@@ -2,7 +2,6 @@
 #include "delay.h"
 #include "i2c.h"
 
-
 uint8_t u8x8_byte_hw_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
     /* u8g2/u8x8 will never send more than 32 bytes between START_TRANSFER and END_TRANSFER */
@@ -105,7 +104,15 @@ uint8_t u8x8_gpio_and_delay(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *ar
 //u8x8_byte_sw_i2c：使用软件IIC驱动，该函数由U8g2源码提供
 //u8x8_gpio_and_delay：就是上面我们写的配置函数
 
-void u8g2Init(u8g2_t *u8g2)
+/**
+ * @name: u8g2_init
+ * @msg: 初始化u8g2相关功能以及屏幕
+ * @param {u8g2_t} *u8g2
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-04 10:55:51
+ */
+void u8g2_init(u8g2_t *u8g2)
 {
     u8g2_Setup_ssd1306_i2c_128x64_noname_f(u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay); // 初始化u8g2 结构体
     u8g2_InitDisplay(u8g2);                                                                       // 
@@ -113,8 +120,15 @@ void u8g2Init(u8g2_t *u8g2)
     u8g2_ClearBuffer(u8g2);
 }
 
-
-void draw(u8g2_t *u8g2)
+/**
+ * @name: u8g2_draw
+ * @msg: 测试用的写屏函数
+ * @param {u8g2_t} *u8g2
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-04 10:55:29
+ */
+void u8g2_draw(u8g2_t *u8g2)
 {
     u8g2_ClearBuffer(u8g2);
 
@@ -144,18 +158,41 @@ void draw(u8g2_t *u8g2)
     HAL_Delay(1000);
 }
 
-//画点填充
-void testDrawPixelToFillScreen(u8g2_t *u8g2)
-{
-    int t = 1000;
-    u8g2_ClearBuffer(u8g2);
+/* 用户代码开始 */
+#include "stm32_voice_weather_forecast.h"
 
-    for (int j = 0; j < 64; j++)
-    {
-        for (int i = 0; i < 128; i++)
-        {
-            u8g2_DrawPixel(u8g2,i, j);
-        }
-    }
-    HAL_Delay(1000);
+uint8_t u8g2_refresh_scr(void *private_data)
+{
+    char frame_buffer[80] = {0};
+    char weather_buffer[50];
+    char temperature_buffer[10];
+    char humidity_buffer[10];
+    char wind_speed_buffer[10];
+    stm32_voice_weather_forecast_t *p_dev_st = private_data;
+    u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
+
+    u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_t0_11_te);
+    // 显示时间日期
+    sprintf(frame_buffer, "%04d-%02d-%02d %02d:%02d:%02d", p_dev_st->time_info.year, p_dev_st->time_info.month, p_dev_st->time_info.day, p_dev_st->time_info.hour, p_dev_st->time_info.minute, p_dev_st->time_info.second);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 1, 10, frame_buffer); // 在坐标 (0, 20) 处显示字符串
+    memset(frame_buffer, 0, sizeof(frame_buffer));
+
+    u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_5x8_mr);
+
+    sprintf(weather_buffer, "weather:%s", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].weather);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, weather_buffer);
+
+    sprintf(temperature_buffer, "temp: %2.1f", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].temperature);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 30, temperature_buffer);
+
+    sprintf(humidity_buffer, "humidity: %2.1f", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].humidity);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 60, 30, humidity_buffer);
+
+    sprintf(wind_speed_buffer, "wind speed = %d", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].wind_speed);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 40, wind_speed_buffer);
+
+
+    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
+    return 0;
 }
+/* 用户代码结束 */
