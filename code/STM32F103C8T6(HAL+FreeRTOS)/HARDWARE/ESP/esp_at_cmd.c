@@ -1,8 +1,8 @@
 /*
- * @Description: esp at指令相关功能, 使用阻塞接收方式接收数据
+ * @Description: esp at指令相关功能, 使用阻塞接收方式接收数据, 使用 cjson 需要足够的 heap 大小
  * @Author: TOTHTOT
  * @Date: 2024-05-04 11:53:13
- * @LastEditTime: 2024-05-04 17:42:43
+ * @LastEditTime: 2024-05-04 21:47:55
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\esp_at_cmd.c
  */
@@ -13,7 +13,8 @@
 #include "usart.h"
 #include "usart1.h"
 #include "stm32_voice_weather_forecast.h"
-
+#include "cJSON.h"
+#include "delay.h"
 /**
  * @name: esp_at_uart_send_data
  * @msg: esp 的串口发送函数
@@ -54,7 +55,7 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
         // 错误的话再次判断是超时但是有数据还是其他错误
         if (ret == HAL_TIMEOUT)
         {
-            int32_t len =  strlen((char *)recvbuf);
+            int32_t len = strlen((char *)recvbuf);
             if (len > 0)
             {
                 return HAL_OK;
@@ -62,7 +63,7 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
             else
                 return -ret;
         }
-        
+
         return -ret;
     }
     return HAL_OK;
@@ -70,6 +71,64 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
 
 /* 用户实现函数结束 */
 
+/**
+ * @name: esp_at_analysis_json_weather
+ * @msg: 解析保存在 json 中的天气数据, 填写在 p_weather_info_st 中
+ * @param {char} *json_data json 数据
+ * @param {void} *private_data 填写的结构体
+ * @param {uint8_t} weather_info_len p_weather_info_st 的数量, 目前是3个
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-04 21:39:50
+ */
+uint8_t esp_at_analysis_json_weather(const char *json_data, void *private_data, uint8_t weather_info_len)
+{
+    weather_info_t *p_weather_info_st = (weather_info_t *)private_data;
+    // 解析 JSON 字符串
+    cJSON *root = cJSON_Parse((char *)json_data);
+    // cJSON *root = cJSON_Parse(json_string);
+    if (root == NULL)
+    {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return 1;
+    }
+    INFO_PRINT("json buf:%s\r\n", json_data);
+
+    // 访问 JSON 数据
+    cJSON *results = cJSON_GetObjectItem(root, "results");
+    cJSON *location = cJSON_GetObjectItem(results->child, "location");
+    cJSON *daily = cJSON_GetObjectItem(results->child, "daily");
+
+    // 输出解析结果
+    printf("Location: %s\r\n", cJSON_GetObjectItem(location, "name")->valuestring);
+
+    // 遍历每一天的天气信息
+    cJSON *daily_item = NULL;
+    uint8_t index = 0;
+    cJSON_ArrayForEach(daily_item, daily)
+    {
+        printf("Date: %s, high: %s, low: %s, humidity: %s, wind_speed = %s, text_night = %s\r\n",
+               cJSON_GetObjectItem(daily_item, "date")->valuestring,
+               cJSON_GetObjectItem(daily_item, "high")->valuestring,
+               cJSON_GetObjectItem(daily_item, "low")->valuestring,
+               cJSON_GetObjectItem(daily_item, "humidity")->valuestring,
+               cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring,
+               cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
+        if (index < weather_info_len - 1)
+        {
+            p_weather_info_st[index].temperature_high = atoi(cJSON_GetObjectItem(daily_item, "high")->valuestring);
+            p_weather_info_st[index].temperature_low = atoi(cJSON_GetObjectItem(daily_item, "low")->valuestring);
+            p_weather_info_st[index].humidity = atoi(cJSON_GetObjectItem(daily_item, "humidity")->valuestring);
+            p_weather_info_st[index].wind_speed = atof(cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring);
+            strcpy((char *)p_weather_info_st[index].weather, cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
+            index++;
+        }
+    }
+
+    // 释放 cJSON 对象
+    cJSON_Delete(root);
+	return 0;
+}
 
 /**
  * @name: esp_at_send_cmd_by_waitack
@@ -88,7 +147,7 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
 {
     p_dev_st->ops_func.send_data((uint8_t *)cmd, cmdlen);
     if (p_dev_st->ops_func.recv_data(p_dev_st->uart_info_st.rxbuf,
-                                 sizeof(p_dev_st->uart_info_st.rxbuf), timeout) != HAL_OK)
+                                     sizeof(p_dev_st->uart_info_st.rxbuf), timeout) != HAL_OK)
     {
         return 1;
     }
@@ -134,12 +193,12 @@ bool esp_is_connect_wifi(esp_at_t *p_dev_st)
     +CWJAP:"esp-2.4G","46:33:bb:ed:0e:37",1,-43
 
     OK */
-   /*  如果没连接WiFi, 则接收到这个
-    RX：AT+CWJAP?
+    /*  如果没连接WiFi, 则接收到这个
+     RX：AT+CWJAP?
 
-    No AP
+     No AP
 
-    OK */
+     OK */
     if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
                                    ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 100) == 2)
         return true;
@@ -150,15 +209,24 @@ bool esp_is_connect_wifi(esp_at_t *p_dev_st)
 bool esp_is_avaliable(esp_at_t *p_dev_st)
 {
     if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_AT, sizeof(ESP_AT_CMD_AT),
-                                          ESP_AT_CMD_AT_ACK, strlen(ESP_AT_CMD_AT_ACK), 2000) != 0)
+                                   ESP_AT_CMD_AT_ACK, strlen(ESP_AT_CMD_AT_ACK), 2000) != 0)
     {
         // 设备掉线
         ERROR_PRINT("esp offline\r\n");
         return false;
     }
-	return true;
+    return true;
 }
 
+/**
+ * @name: esp_at_get_weather
+ * @msg: 获取天气数据
+ * @param {esp_at} *p_dev_st
+ * @param {char} *city 城市名称
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-04 21:54:35
+ */
 uint8_t esp_at_get_weather(struct esp_at *p_dev_st, const char *city)
 {
     uint8_t ret = 0;
@@ -186,7 +254,6 @@ uint8_t esp_at_get_weather(struct esp_at *p_dev_st, const char *city)
         }
         // 获取天气数据
         sprintf(city_buf, ESP_AT_CMD_GET_WEATHER, city);
-        INFO_PRINT("city buf = %s\r\n");
         if (esp_at_send_cmd_by_waitack(p_dev_st, city_buf, strlen(city_buf), NULL, ESP_AT_CMD_GET_WEATHER_ACK, 2000) != 0)
         {
             ret = 4;
@@ -207,6 +274,8 @@ esp_at_t g_esp_at_st = {
     .ops_func.check_wifi_is_connected = esp_is_connect_wifi,
     .ops_func.check_device_is_avaliable = esp_is_avaliable,
     .ops_func.get_weather = esp_at_get_weather,
+    .ops_func.delay_ms = delay_xms,
+    .ops_func.analysis_json_weather = esp_at_analysis_json_weather,
 };
 
 /**
@@ -219,7 +288,7 @@ esp_at_t g_esp_at_st = {
  */
 uint8_t esp_at_cmd_init(esp_at_t *p_dev_st)
 {
-    uint8_t ret = 0;
+//    uint8_t ret = 0;
     char wifi_connect_buf[90] = {0};
     // 验证设备是否存在
     p_dev_st->dev_is_ok = p_dev_st->ops_func.check_device_is_avaliable(p_dev_st);
@@ -228,24 +297,19 @@ uint8_t esp_at_cmd_init(esp_at_t *p_dev_st)
 
     // 验证是否连接WiFi
     p_dev_st->dev_is_connect_wifi = p_dev_st->ops_func.check_wifi_is_connected(p_dev_st);
-    
+
     // 设置连接模式
     esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CONNECT_MODE, sizeof(ESP_AT_CMD_CONNECT_MODE), ESP_AT_CMD_CONNECT_MODE_ACK, strlen(ESP_AT_CMD_CONNECT_MODE_ACK), 2000);
-    
+
     // 没连接WiFi才尝试连接wifi
     if (p_dev_st->dev_is_connect_wifi == false)
     {
         sprintf(wifi_connect_buf, ESP_AT_CMD_CONNECT_WIFI, ESP_01S_WIFI_NAME, ESP_01S_WIFI_PASSWORD);
         // 连接WiFi
-        if (esp_at_send_cmd_by_waitack(p_dev_st, wifi_connect_buf, strlen(wifi_connect_buf), ESP_AT_CMD_CONNECT_WIFI_CONNECTED, strlen(ESP_AT_CMD_CONNECT_WIFI_CONNECTED), 3000)!=0)
+        if (esp_at_send_cmd_by_waitack(p_dev_st, wifi_connect_buf, strlen(wifi_connect_buf), ESP_AT_CMD_CONNECT_WIFI_CONNECTED, strlen(ESP_AT_CMD_CONNECT_WIFI_CONNECTED), 3000) != 0)
             return 2;
-    }
-    
-    // 获取天气数据
-    if ((ret = p_dev_st->ops_func.get_weather(p_dev_st, "fujianfuzhou")) != 0)
-    {
-        ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
-        return 3;
+        p_dev_st->dev_is_connect_wifi = true;
+        p_dev_st->ops_func.delay_ms(2000);
     }
     return 0;
 }

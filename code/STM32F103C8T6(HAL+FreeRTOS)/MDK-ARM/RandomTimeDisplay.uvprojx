@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../HARDWARE/KEY;../HARDWARE/LED;../SYSTEM/delay;../HARDWARE/USART;../SYSTEM/usart;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../HARDWARE/SYN6288;../HARDWARE/OLED;..\HARDWARE\ESP</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../HARDWARE/KEY;../HARDWARE/LED;../SYSTEM/delay;../HARDWARE/USART;../SYSTEM/usart;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../HARDWARE/SYN6288;../HARDWARE/OLED;../HARDWARE/ESP;../HARDWARE/ESP/cjson</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -789,6 +789,16 @@
               <FileName>esp_at_cmd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\ESP\esp_at_cmd.c</FilePath>
+            </File>
+            <File>
+              <FileName>cJSON.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\ESP\cjson\cJSON.c</FilePath>
+            </File>
+            <File>
+              <FileName>cJSON_Utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\ESP\cjson\cJSON_Utils.c</FilePath>
             </File>
           </Files>
         </Group>

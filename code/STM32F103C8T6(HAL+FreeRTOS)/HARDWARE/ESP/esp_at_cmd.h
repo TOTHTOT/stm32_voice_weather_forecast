@@ -37,7 +37,7 @@
 #define ESP_AT_CMD_CIPSEND_ACK "OK"
 
 // 获取数据, 需要传入城市例如 fujianfuzhou, 根据长度判断是否成功
-#define ESP_AT_CMD_GET_WEATHER "GET https://api.seniverse.com/v3/weather/daily.json?key=SoUv4ZjtbR7TtoHfu&location=%s&language=en&unit=c&start=-1&days=5\r\n"
+#define ESP_AT_CMD_GET_WEATHER "GET https://api.seniverse.com/v3/weather/daily.json?key=S_PcI0OeUiEbEZBpp&location=%s&language=en&unit=c&start=-1&days=3\r\n"
 #define ESP_AT_CMD_GET_WEATHER_ACK 500
 
 // 查询是否连接wifi
@@ -60,12 +60,13 @@ typedef struct esp_at
         /* 用户实现函数 */
         int32_t (*send_data)(uint8_t *data, uint16_t len);
         int32_t (*recv_data)(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeout_ms);
-
+        void (*delay_ms)(uint32_t ms);
         /* 外部函数 */
         bool (*connect_wifi)(struct esp_at *p_dev_st, char *ssid, char *password);
         bool (*check_device_is_avaliable)(struct esp_at *p_dev_st);
         bool (*check_wifi_is_connected)(struct esp_at *p_dev_st);
         uint8_t (*get_weather)(struct esp_at *p_dev_st, const char *city);
+        uint8_t (*analysis_json_weather)(const char *json_data, void *p_weather_info_st, uint8_t weather_info_len);
     } ops_func;
 } esp_at_t;
 /* 全局函数 */

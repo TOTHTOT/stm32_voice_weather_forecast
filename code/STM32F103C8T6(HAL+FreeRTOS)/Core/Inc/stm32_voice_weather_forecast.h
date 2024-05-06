@@ -1,8 +1,8 @@
 /*
- * @Description: 
+ * @Description:
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:37
- * @LastEditTime: 2024-05-04 17:10:35
+ * @LastEditTime: 2024-05-06 08:38:13
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Inc\stm32_voice_weather_forecast.h
  */
@@ -23,7 +23,6 @@
 #define DEVICE_BUILD_DATE __DATE__
 #define DEVICE_BUILD_TIME __TIME__
 
-
 /* 类型定义 */
 typedef struct time_info
 {
@@ -35,6 +34,16 @@ typedef struct time_info
     uint8_t second; // 秒
 } time_info_t;
 
+typedef struct weather_info
+{
+    uint8_t temperature_high; // 温度
+    uint8_t temperature_low;  // 温度
+    uint8_t humidity;         // 湿度
+    uint8_t weather[20];      // 天气
+    uint8_t 
+    float wind_speed;       // 风速
+} weather_info_t;
+
 typedef struct stm32_voice_weather_forecast
 {
     struct devices
@@ -44,13 +53,7 @@ typedef struct stm32_voice_weather_forecast
         esp_at_t *p_esp_at_dev_st;
     } devices_info;
 
-    struct weather_info
-    {
-        float temperature;   // 温度
-        float humidity;      // 湿度
-        uint8_t weather[10]; // 天气
-        uint8_t wind_speed;  // 风速
-    } weather_info_st[3];
+    weather_info_t weather_info_st[3];   // 天气信息, 0: 昨天, 1: 今天, 2: 明天;
     time_info_t time_info;               // 时间
     uint8_t cur_show_weather_info_index; // 当前显示的天气, 0: 昨天, 1: 今天, 2: 明天;
 

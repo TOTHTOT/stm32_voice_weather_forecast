@@ -182,14 +182,16 @@ uint8_t u8g2_refresh_scr(void *private_data)
     sprintf(weather_buffer, "weather:%s", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].weather);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, weather_buffer);
 
-    sprintf(temperature_buffer, "temp: %2.1f", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].temperature);
+    sprintf(temperature_buffer, "temp_h: %03d", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].temperature_high);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 30, temperature_buffer);
+    sprintf(temperature_buffer, "temp_l: %03d", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].temperature_low);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 65, 30, temperature_buffer);
 
-    sprintf(humidity_buffer, "humidity: %2.1f", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].humidity);
-    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 60, 30, humidity_buffer);
+    sprintf(humidity_buffer, "humidity: %03d", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].humidity);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 40, humidity_buffer);
 
-    sprintf(wind_speed_buffer, "wind speed = %d", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].wind_speed);
-    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 40, wind_speed_buffer);
+    sprintf(wind_speed_buffer, "wind speed = %2.1f", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].wind_speed);
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 50, wind_speed_buffer);
 
 
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏

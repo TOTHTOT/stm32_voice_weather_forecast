@@ -6,7 +6,7 @@
   <Header>### uVision Project, (C) Keil Software</Header>
 
   <PrjGuiSettings>
-    <LastAddFilePath>E:\JieDan\stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP</LastAddFilePath>
+    <LastAddFilePath>E:\JieDan\stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\cjson</LastAddFilePath>
   </PrjGuiSettings>
 
   <ViewPool/>

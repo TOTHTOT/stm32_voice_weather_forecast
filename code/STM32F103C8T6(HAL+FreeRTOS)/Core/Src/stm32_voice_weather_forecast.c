@@ -51,13 +51,27 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
         goto ERROR_PRINT;
     }
 
+    // 获取天气数据, 并解析
+    memset(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf));
+    if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
+    {
+        ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
+        return 3;
+    }
+    else
+    {
+        esp_at_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
+    }
+
     u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
     u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_t0_11_te);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, "init success");
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
-    INFO_PRINT("weather:%s\r\n", p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf);
+    // INFO_PRINT("weather:%s\r\n", p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf);
     delay_xms(500);
 
+    // 默认显示今天天气
+    p_dev_st->cur_show_weather_info_index = 1;
     u8g2_refresh_scr(p_dev_st);
 
 #if 0

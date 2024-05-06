@@ -58,8 +58,6 @@
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId LED_TASKHandle;
-osThreadId KEY_TASKHandle;
-osThreadId USART1_TASKHandle;
 osTimerId time_1sHandle;
 osTimerId esp_uartrecv_timHandle;
 osSemaphoreId Usart1_Receive_BinSemaphoreHandle;
@@ -72,8 +70,6 @@ osSemaphoreId oled_refreashHandle;
 
 void StartDefaultTask(void const * argument);
 void led_task(void const * argument);
-void key_task(void const * argument);
-void usart1_task(void const * argument);
 void time_1s_cb(void const * argument);
 void esp_uartrecv_tim_cb(void const * argument);
 
@@ -165,14 +161,6 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(LED_TASK, led_task, osPriorityLow, 0, 128);
   LED_TASKHandle = osThreadCreate(osThread(LED_TASK), NULL);
 
-  /* definition and creation of KEY_TASK */
-  osThreadDef(KEY_TASK, key_task, osPriorityLow, 0, 128);
-  KEY_TASKHandle = osThreadCreate(osThread(KEY_TASK), NULL);
-
-  /* definition and creation of USART1_TASK */
-  osThreadDef(USART1_TASK, usart1_task, osPriorityLow, 0, 256);
-  USART1_TASKHandle = osThreadCreate(osThread(USART1_TASK), NULL);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -186,9 +174,9 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const *argument)
+void StartDefaultTask(void const * argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
     uint32_t loop_times = 0;
     if (stm32_voice_weather_forecast_init(&g_stm32_voice_weather_forecast_st) != 0)
     {
@@ -209,7 +197,7 @@ void StartDefaultTask(void const *argument)
         loop_times++;
         osDelay(10);
     }
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_led_task */
@@ -230,49 +218,6 @@ void led_task(void const * argument)
         delay_ms(500);
   }
   /* USER CODE END led_task */
-}
-
-/* USER CODE BEGIN Header_key_task */
-/**
-* @brief Function implementing the KEY_TASK thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_key_task */
-void key_task(void const * argument)
-{
-  /* USER CODE BEGIN key_task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1000);
-  }
-  /* USER CODE END key_task */
-}
-
-/* USER CODE BEGIN Header_usart1_task */
-/**
-* @brief Function implementing the USART1_TASK thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_usart1_task */
-void usart1_task(void const * argument)
-{
-  /* USER CODE BEGIN usart1_task */
-    uint8_t len;
-  /* Infinite loop */
-  for(;;)
-  {
-        xSemaphoreTake(Usart1_Receive_BinSemaphoreHandle, portMAX_DELAY);
-        len = USART_RX_STA & 0x3fff; // get lenth of the data
-        printf("data:%s len:%d\r\n", USART_RX_BUF, len);
-        memset(USART_RX_BUF, '\0', sizeof(USART_RX_BUF)); // initialization buf
-        USART_RX_STA = 0;
-        // osDelay(1);
-        delay_ms(1);
-  }
-  /* USER CODE END usart1_task */
 }
 
 /* time_1s_cb function */
