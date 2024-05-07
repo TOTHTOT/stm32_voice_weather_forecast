@@ -2,13 +2,14 @@
  * @Description: 基于stm32的智能语音天气预报系统
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:28
- * @LastEditTime: 2024-05-04 17:36:35
+ * @LastEditTime: 2024-05-07 22:48:54
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
 #include "stm32_voice_weather_forecast.h"
 #include "delay.h"
 #include "test_u8g2.h"
+#include "cJSON.h"
 
 /* 全局变量 */
 stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
@@ -22,6 +23,66 @@ stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
     .time_info.second = 28,
     //.devices_info.p_oled_dev_st = &g_oled_device_st,
 };
+
+
+/**
+ * @name: stm32_voice_weather_forecast_analysis_json_weather
+ * @msg: 解析保存在 json 中的天气数据, 填写在 p_weather_info_st 中
+ * @param {char} *json_data json 数据
+ * @param {void} *private_data 填写的结构体
+ * @param {uint8_t} weather_info_len p_weather_info_st 的数量, 目前是3个
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-04 21:39:50
+ */
+uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data, void *private_data, uint8_t weather_info_len)
+{
+    weather_info_t *p_weather_info_st = (weather_info_t *)private_data;
+    // 解析 JSON 字符串
+    cJSON *root = cJSON_Parse((char *)json_data);
+    // cJSON *root = cJSON_Parse(json_string);
+    if (root == NULL)
+    {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return 1;
+    }
+    // INFO_PRINT("json buf:%s\r\n", json_data);
+
+    // 访问 JSON 数据
+    cJSON *results = cJSON_GetObjectItem(root, "results");
+    cJSON *location = cJSON_GetObjectItem(results->child, "location");
+    cJSON *daily = cJSON_GetObjectItem(results->child, "daily");
+
+    // 输出解析结果
+    printf("Location: %s\r\n", cJSON_GetObjectItem(location, "name")->valuestring);
+
+    // 遍历每一天的天气信息
+    cJSON *daily_item = NULL;
+    uint8_t index = 0;
+    cJSON_ArrayForEach(daily_item, daily)
+    {
+        printf("Date: %s, high: %s, low: %s, humidity: %s, wind_speed = %s, text_night = %s\r\n",
+               cJSON_GetObjectItem(daily_item, "date")->valuestring,
+               cJSON_GetObjectItem(daily_item, "high")->valuestring,
+               cJSON_GetObjectItem(daily_item, "low")->valuestring,
+               cJSON_GetObjectItem(daily_item, "humidity")->valuestring,
+               cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring,
+               cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
+        if (index < weather_info_len - 1)
+        {
+            p_weather_info_st[index].temperature_high = atoi(cJSON_GetObjectItem(daily_item, "high")->valuestring);
+            p_weather_info_st[index].temperature_low = atoi(cJSON_GetObjectItem(daily_item, "low")->valuestring);
+            p_weather_info_st[index].humidity = atoi(cJSON_GetObjectItem(daily_item, "humidity")->valuestring);
+            p_weather_info_st[index].wind_speed = atof(cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring);
+            strcpy((char *)p_weather_info_st[index].weather, cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
+            index++;
+        }
+    }
+
+    // 释放 cJSON 对象
+    cJSON_Delete(root);
+	return 0;
+}
 
 /**
  * @name: stm32_voice_weather_forecast_init
@@ -46,6 +107,10 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 60, DEVICE_BUILD_TIME);
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
 
+    HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_RESET);
+    delay_xms(10);
+    HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_SET);
+    delay_xms(2000);
     if ((ret = esp_at_cmd_init(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
     {
         goto ERROR_PRINT;
@@ -60,7 +125,7 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     }
     else
     {
-        esp_at_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
+        stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
     }
 
     u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
@@ -83,7 +148,7 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
         u8g2DrawTest(&p_dev_st->devices_info.u8g2);
     } while (u8g2_NextPage(&p_dev_st->devices_info.u8g2));
 #endif
-    delay_xms(100);
+    //delay_xms(100);
     return 0;
 
 ERROR_PRINT:

@@ -74,6 +74,8 @@ void Error_Handler(void);
 #define SYN6288_RX_GPIO_Port GPIOA
 #define SYN6288_TX_Pin GPIO_PIN_10
 #define SYN6288_TX_GPIO_Port GPIOA
+#define ESP_RST_IO_Pin GPIO_PIN_5
+#define ESP_RST_IO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

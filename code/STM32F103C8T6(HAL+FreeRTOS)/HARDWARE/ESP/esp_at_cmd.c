@@ -2,7 +2,7 @@
  * @Description: esp at指令相关功能, 使用阻塞接收方式接收数据, 使用 cjson 需要足够的 heap 大小
  * @Author: TOTHTOT
  * @Date: 2024-05-04 11:53:13
- * @LastEditTime: 2024-05-04 21:47:55
+ * @LastEditTime: 2024-05-07 22:53:55
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\esp_at_cmd.c
  */
@@ -72,65 +72,6 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
 /* 用户实现函数结束 */
 
 /**
- * @name: esp_at_analysis_json_weather
- * @msg: 解析保存在 json 中的天气数据, 填写在 p_weather_info_st 中
- * @param {char} *json_data json 数据
- * @param {void} *private_data 填写的结构体
- * @param {uint8_t} weather_info_len p_weather_info_st 的数量, 目前是3个
- * @return {*}
- * @author: TOTHTOT
- * @Date: 2024-05-04 21:39:50
- */
-uint8_t esp_at_analysis_json_weather(const char *json_data, void *private_data, uint8_t weather_info_len)
-{
-    weather_info_t *p_weather_info_st = (weather_info_t *)private_data;
-    // 解析 JSON 字符串
-    cJSON *root = cJSON_Parse((char *)json_data);
-    // cJSON *root = cJSON_Parse(json_string);
-    if (root == NULL)
-    {
-        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
-        return 1;
-    }
-    INFO_PRINT("json buf:%s\r\n", json_data);
-
-    // 访问 JSON 数据
-    cJSON *results = cJSON_GetObjectItem(root, "results");
-    cJSON *location = cJSON_GetObjectItem(results->child, "location");
-    cJSON *daily = cJSON_GetObjectItem(results->child, "daily");
-
-    // 输出解析结果
-    printf("Location: %s\r\n", cJSON_GetObjectItem(location, "name")->valuestring);
-
-    // 遍历每一天的天气信息
-    cJSON *daily_item = NULL;
-    uint8_t index = 0;
-    cJSON_ArrayForEach(daily_item, daily)
-    {
-        printf("Date: %s, high: %s, low: %s, humidity: %s, wind_speed = %s, text_night = %s\r\n",
-               cJSON_GetObjectItem(daily_item, "date")->valuestring,
-               cJSON_GetObjectItem(daily_item, "high")->valuestring,
-               cJSON_GetObjectItem(daily_item, "low")->valuestring,
-               cJSON_GetObjectItem(daily_item, "humidity")->valuestring,
-               cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring,
-               cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
-        if (index < weather_info_len - 1)
-        {
-            p_weather_info_st[index].temperature_high = atoi(cJSON_GetObjectItem(daily_item, "high")->valuestring);
-            p_weather_info_st[index].temperature_low = atoi(cJSON_GetObjectItem(daily_item, "low")->valuestring);
-            p_weather_info_st[index].humidity = atoi(cJSON_GetObjectItem(daily_item, "humidity")->valuestring);
-            p_weather_info_st[index].wind_speed = atof(cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring);
-            strcpy((char *)p_weather_info_st[index].weather, cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
-            index++;
-        }
-    }
-
-    // 释放 cJSON 对象
-    cJSON_Delete(root);
-	return 0;
-}
-
-/**
  * @name: esp_at_send_cmd_by_waitack
  * @msg: sim800l 发送cmd, 等待ack并设置超时
  * @param {sim800l_device_t} *sim800l_dev_p 设备结构体
@@ -145,6 +86,7 @@ uint8_t esp_at_analysis_json_weather(const char *json_data, void *private_data, 
  */
 uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdlen, char *ack, uint16_t acklen, uint32_t timeout)
 {
+    memset(p_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->uart_info_st.rxbuf));
     p_dev_st->ops_func.send_data((uint8_t *)cmd, cmdlen);
     if (p_dev_st->ops_func.recv_data(p_dev_st->uart_info_st.rxbuf,
                                      sizeof(p_dev_st->uart_info_st.rxbuf), timeout) != HAL_OK)
@@ -156,6 +98,7 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
     {
         if (strlen((char *)p_dev_st->uart_info_st.rxbuf) >= acklen)
         {
+            ERROR_PRINT("ack = [%s], recv = [%s], len = %d\r\n", ack, p_dev_st->uart_info_st.rxbuf, strlen((char *)p_dev_st->uart_info_st.rxbuf));
             return 0;
         }
         else
@@ -168,18 +111,16 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
         if (strstr((char *)p_dev_st->uart_info_st.rxbuf, ack) == NULL)
         {
             ERROR_PRINT("ack = [%s], recv = [%s], len = %d\r\n", ack, p_dev_st->uart_info_st.rxbuf, strlen((char *)p_dev_st->uart_info_st.rxbuf));
-            memset(p_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->uart_info_st.rxbuf));
             return 2;
         }
 
-        memset(p_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->uart_info_st.rxbuf));
         return 0;
     }
 }
 
 /**
  * @name: esp_is_connect_wifi
- * @msg: 检测是否连接到WiFi
+ * @msg: 检测是否连接到WiFi,根据回复的信息中是否含有指定WiFi名称判断是否连接成功
  * @param {esp_at_t} *p_dev_st
  * @return {*}
  * @author: TOTHTOT
@@ -200,10 +141,17 @@ bool esp_is_connect_wifi(esp_at_t *p_dev_st)
 
      OK */
     if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
-                                   ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 100) == 2)
+                                   ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 1000) == 0)
         return true;
     else
-        return false;
+    {
+       /*  p_dev_st->ops_func.delay_ms(1000);
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
+                                        ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 1000) == 0)
+            return true;
+        else */
+            return false;
+    }
 }
 
 bool esp_is_avaliable(esp_at_t *p_dev_st)
@@ -275,7 +223,7 @@ esp_at_t g_esp_at_st = {
     .ops_func.check_device_is_avaliable = esp_is_avaliable,
     .ops_func.get_weather = esp_at_get_weather,
     .ops_func.delay_ms = delay_xms,
-    .ops_func.analysis_json_weather = esp_at_analysis_json_weather,
+    //.ops_func.analysis_json_weather = esp_at_analysis_json_weather,
 };
 
 /**
@@ -294,22 +242,24 @@ uint8_t esp_at_cmd_init(esp_at_t *p_dev_st)
     p_dev_st->dev_is_ok = p_dev_st->ops_func.check_device_is_avaliable(p_dev_st);
     if (p_dev_st->dev_is_ok == false)
         return 1;
+    // 启动延迟确保esp稳定了再获取状态
+    p_dev_st->ops_func.delay_ms(3000);
 
     // 验证是否连接WiFi
     p_dev_st->dev_is_connect_wifi = p_dev_st->ops_func.check_wifi_is_connected(p_dev_st);
-
-    // 设置连接模式
-    esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CONNECT_MODE, sizeof(ESP_AT_CMD_CONNECT_MODE), ESP_AT_CMD_CONNECT_MODE_ACK, strlen(ESP_AT_CMD_CONNECT_MODE_ACK), 2000);
-
+    INFO_PRINT("state = %d, buf = %s\r\n", p_dev_st->dev_is_connect_wifi, p_dev_st->uart_info_st.rxbuf);
     // 没连接WiFi才尝试连接wifi
     if (p_dev_st->dev_is_connect_wifi == false)
     {
         sprintf(wifi_connect_buf, ESP_AT_CMD_CONNECT_WIFI, ESP_01S_WIFI_NAME, ESP_01S_WIFI_PASSWORD);
         // 连接WiFi
         if (esp_at_send_cmd_by_waitack(p_dev_st, wifi_connect_buf, strlen(wifi_connect_buf), ESP_AT_CMD_CONNECT_WIFI_CONNECTED, strlen(ESP_AT_CMD_CONNECT_WIFI_CONNECTED), 3000) != 0)
-            return 2;
+                    return 2;
         p_dev_st->dev_is_connect_wifi = true;
         p_dev_st->ops_func.delay_ms(2000);
     }
+    // 设置连接模式
+    esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CONNECT_MODE, sizeof(ESP_AT_CMD_CONNECT_MODE), ESP_AT_CMD_CONNECT_MODE_ACK, strlen(ESP_AT_CMD_CONNECT_MODE_ACK), 2000);
+
     return 0;
 }

@@ -20,7 +20,7 @@
 #define ESP_AT_CMD_CONNECT_MODE_ACK "OK"
 
 // 连接wifi, 需要传入 WiFi密码以及名称
-#define ESP_AT_CMD_CONNECT_WIFI "AT+CWJAP_DEF=%s,%s\r\n"
+#define ESP_AT_CMD_CONNECT_WIFI "AT+CWJAP_DEF=\"%s\",\"%s\"\r\n"
 #define ESP_AT_CMD_CONNECT_WIFI_DISCONNECT "WIFI DISCONNECT"
 #define ESP_AT_CMD_CONNECT_WIFI_CONNECTED "WIFI CONNECTED"
 #define ESP_AT_CMD_CONNECT_WIFI_CONNECT_BUSY "busy p..."
@@ -42,7 +42,7 @@
 
 // 查询是否连接wifi
 #define ESP_AT_CMD_CWJAP_STATUS "AT+CWJAP_DEF?\r\n"
-#define ESP_AT_CMD_CWJAP_STATUS_ACK "No AP"
+#define ESP_AT_CMD_CWJAP_STATUS_ACK ESP_01S_WIFI_NAME
 /* 类型定义 */
 typedef struct esp_at
 {

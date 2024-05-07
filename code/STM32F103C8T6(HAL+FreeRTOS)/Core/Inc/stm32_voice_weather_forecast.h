@@ -2,7 +2,7 @@
  * @Description:
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:37
- * @LastEditTime: 2024-05-06 08:38:13
+ * @LastEditTime: 2024-05-07 21:40:55
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Inc\stm32_voice_weather_forecast.h
  */
@@ -40,7 +40,6 @@ typedef struct weather_info
     uint8_t temperature_low;  // 温度
     uint8_t humidity;         // 湿度
     uint8_t weather[20];      // 天气
-    uint8_t 
     float wind_speed;       // 风速
 } weather_info_t;
 
