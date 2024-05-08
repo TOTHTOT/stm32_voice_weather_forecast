@@ -111,6 +111,7 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     delay_xms(10);
     HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_SET);
     delay_xms(2000);
+#if 1
     if ((ret = esp_at_cmd_init(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
     {
         goto ERROR_PRINT;
@@ -127,13 +128,14 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     {
         stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
     }
+#endif
 
     u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
     u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_t0_11_te);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, "init success");
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
     // INFO_PRINT("weather:%s\r\n", p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf);
-    delay_xms(500);
+    // delay_xms(500);
 
     // 默认显示今天天气
     p_dev_st->cur_show_weather_info_index = 1;
