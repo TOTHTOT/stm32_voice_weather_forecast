@@ -190,12 +190,20 @@ void StartDefaultTask(void const * argument)
         if (g_stm32_voice_weather_forecast_st.system_is_ready != true)
             osDelay(10000);
 
-        if (loop_times >= 10)
+        if (loop_times %10 == 0)
         {
+            // 500ms 刷新屏幕天气信息
+            if (loop_times % 50 == 0)
+            {
+                g_stm32_voice_weather_forecast_st.cur_show_weather_info_index++;
+                if (g_stm32_voice_weather_forecast_st.cur_show_weather_info_index > WEATHER_INFO_INDEX_TOMORROW)
+                    g_stm32_voice_weather_forecast_st.cur_show_weather_info_index = WEATHER_INFO_INDEX_YESTERDAY;
+                INFO_PRINT("cur_show_weather_info_index = %d\r\n", g_stm32_voice_weather_forecast_st.cur_show_weather_info_index);
+            }
             u8g2_refresh_scr(&g_stm32_voice_weather_forecast_st);
         }
         loop_times++;
-        osDelay(10);
+        osDelay(DEFAULT_THR_DELAY_TIME_MS);
     }
   /* USER CODE END StartDefaultTask */
 }

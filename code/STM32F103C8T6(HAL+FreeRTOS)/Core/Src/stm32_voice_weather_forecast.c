@@ -2,7 +2,7 @@
  * @Description: 基于stm32的智能语音天气预报系统
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:28
- * @LastEditTime: 2024-05-07 22:48:54
+ * @LastEditTime: 2024-05-08 21:27:49
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
@@ -68,12 +68,13 @@ uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data
                cJSON_GetObjectItem(daily_item, "humidity")->valuestring,
                cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring,
                cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
-        if (index < weather_info_len - 1)
+        if (index < weather_info_len)
         {
             p_weather_info_st[index].temperature_high = atoi(cJSON_GetObjectItem(daily_item, "high")->valuestring);
             p_weather_info_st[index].temperature_low = atoi(cJSON_GetObjectItem(daily_item, "low")->valuestring);
             p_weather_info_st[index].humidity = atoi(cJSON_GetObjectItem(daily_item, "humidity")->valuestring);
             p_weather_info_st[index].wind_speed = atof(cJSON_GetObjectItem(daily_item, "wind_speed")->valuestring);
+            strcpy((char *)p_weather_info_st[index].weather_time, cJSON_GetObjectItem(daily_item, "date")->valuestring);
             strcpy((char *)p_weather_info_st[index].weather, cJSON_GetObjectItem(daily_item, "text_night")->valuestring);
             index++;
         }
@@ -138,7 +139,7 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     // delay_xms(500);
 
     // 默认显示今天天气
-    p_dev_st->cur_show_weather_info_index = 1;
+    p_dev_st->cur_show_weather_info_index = WEATHER_INFO_INDEX_TODAY;
     u8g2_refresh_scr(p_dev_st);
 
 #if 0

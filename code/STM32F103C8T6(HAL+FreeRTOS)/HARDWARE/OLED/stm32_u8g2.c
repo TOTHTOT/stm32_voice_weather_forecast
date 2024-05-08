@@ -202,6 +202,8 @@ uint8_t u8g2_refresh_scr(void *private_data)
     sprintf(frame_buffer, "wind speed = %2.1f", p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].wind_speed);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 50, frame_buffer);
 
+    u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 60, (char *)p_dev_st->weather_info_st[p_dev_st->cur_show_weather_info_index].weather_time);
+
 
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
     return 0;

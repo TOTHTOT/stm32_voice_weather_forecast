@@ -2,7 +2,7 @@
  * @Description: esp at指令相关功能, 使用阻塞接收方式接收数据, 使用 cjson 需要足够的 heap 大小
  * @Author: TOTHTOT
  * @Date: 2024-05-04 11:53:13
- * @LastEditTime: 2024-05-07 22:53:55
+ * @LastEditTime: 2024-05-08 21:38:54
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\esp_at_cmd.c
  */
@@ -98,7 +98,6 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
     {
         if (strlen((char *)p_dev_st->uart_info_st.rxbuf) >= acklen)
         {
-            ERROR_PRINT("ack = [%s], recv = [%s], len = %d\r\n", ack, p_dev_st->uart_info_st.rxbuf, strlen((char *)p_dev_st->uart_info_st.rxbuf));
             return 0;
         }
         else

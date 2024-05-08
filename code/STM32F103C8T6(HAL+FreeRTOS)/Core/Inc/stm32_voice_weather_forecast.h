@@ -2,7 +2,7 @@
  * @Description:
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:37
- * @LastEditTime: 2024-05-07 21:40:55
+ * @LastEditTime: 2024-05-08 20:57:22
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Inc\stm32_voice_weather_forecast.h
  */
@@ -22,6 +22,7 @@
 /* 宏定义 */
 #define DEVICE_BUILD_DATE __DATE__
 #define DEVICE_BUILD_TIME __TIME__
+#define DEFAULT_THR_DELAY_TIME_MS 10 // StartDefaultTask() 线程延时时间, 单位:ms
 
 /* 类型定义 */
 typedef struct time_info
@@ -40,7 +41,8 @@ typedef struct weather_info
     uint8_t temperature_low;  // 温度
     uint8_t humidity;         // 湿度
     uint8_t weather[20];      // 天气
-    float wind_speed;       // 风速
+    uint8_t weather_time[20]; // 天气对应时间
+    float wind_speed;         // 风速
 } weather_info_t;
 
 typedef struct stm32_voice_weather_forecast
@@ -52,9 +54,14 @@ typedef struct stm32_voice_weather_forecast
         esp_at_t *p_esp_at_dev_st;
     } devices_info;
 
-    weather_info_t weather_info_st[3];   // 天气信息, 0: 昨天, 1: 今天, 2: 明天;
-    time_info_t time_info;               // 时间
-    uint8_t cur_show_weather_info_index; // 当前显示的天气, 0: 昨天, 1: 今天, 2: 明天;
+    weather_info_t weather_info_st[3]; // 天气信息, 0: 昨天, 1: 今天, 2: 明天;
+    time_info_t time_info;             // 时间
+    enum
+    {
+        WEATHER_INFO_INDEX_YESTERDAY,
+        WEATHER_INFO_INDEX_TODAY,
+        WEATHER_INFO_INDEX_TOMORROW
+    } cur_show_weather_info_index; // 当前显示的天气, 0: 昨天, 1: 今天, 2: 明天;
 
     bool system_is_ready; // == true 表示系统已经初始化完成, 其他任务才能开始执行
 } stm32_voice_weather_forecast_t;
