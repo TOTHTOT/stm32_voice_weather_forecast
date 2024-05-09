@@ -463,12 +463,12 @@ ARM Macro Assembler    Page 8
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
 ork --depend=randomtimedisplay\startup_stm32f103xb.d -orandomtimedisplay\startu
-p_stm32f103xb.o -I..\Core\Inc -I../Core/Inc -I.\RTE\_RandomTimeDisplay -I"E:\Ke
-il Programma\PACK\ARM\CMSIS\5.7.0\CMSIS\Core\Include" -I"E:\Keil Programma\PACK
-\Keil\STM32F1xx_DFP\2.1.0\Device\Include" --predefine="__MICROLIB SETA 1" --pre
-define="__UVISION_VERSION SETA 530" --predefine="_RTE_ SETA 1" --predefine="STM
-32F10X_MD SETA 1" --predefine="_RTE_ SETA 1" --list=startup_stm32f103xb.lst sta
-rtup_stm32f103xb.s
+p_stm32f103xb.o -I..\Core\Inc -I../Core/Inc -ID:\Documents\GitHub\stm32_voice_w
+eather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\MDK-ARM\RTE -ID:\WorkSoft\ARM\
+PACK\ARM\CMSIS\4.5.0\CMSIS\Include -ID:\WorkSoft\ARM\PACK\Keil\STM32F1xx_DFP\2.
+2.0\Device\Include --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSI
+ON SETA 518" --predefine="_RTE_ SETA 1" --predefine="STM32F10X_MD SETA 1" --lis
+t=startup_stm32f103xb.lst startup_stm32f103xb.s
 
 
 

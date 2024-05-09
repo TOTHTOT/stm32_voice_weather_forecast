@@ -59,7 +59,7 @@
 osThreadId defaultTaskHandle;
 osThreadId LED_TASKHandle;
 osTimerId time_1sHandle;
-osTimerId esp_uartrecv_timHandle;
+osTimerId ld3320_uartrecv_timHandle;
 osSemaphoreId Usart1_Receive_BinSemaphoreHandle;
 osSemaphoreId oled_refreashHandle;
 
@@ -71,7 +71,7 @@ osSemaphoreId oled_refreashHandle;
 void StartDefaultTask(void const * argument);
 void led_task(void const * argument);
 void time_1s_cb(void const * argument);
-void esp_uartrecv_tim_cb(void const * argument);
+void ld3320_uartrecv_tim_cb(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -140,9 +140,9 @@ void MX_FREERTOS_Init(void) {
   osTimerDef(time_1s, time_1s_cb);
   time_1sHandle = osTimerCreate(osTimer(time_1s), osTimerPeriodic, NULL);
 
-  /* definition and creation of esp_uartrecv_tim */
-  osTimerDef(esp_uartrecv_tim, esp_uartrecv_tim_cb);
-  esp_uartrecv_timHandle = osTimerCreate(osTimer(esp_uartrecv_tim), osTimerPeriodic, NULL);
+  /* definition and creation of ld3320_uartrecv_tim */
+  osTimerDef(ld3320_uartrecv_tim, ld3320_uartrecv_tim_cb);
+  ld3320_uartrecv_timHandle = osTimerCreate(osTimer(ld3320_uartrecv_tim), osTimerPeriodic, NULL);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -236,12 +236,32 @@ void time_1s_cb(void const * argument)
   /* USER CODE END time_1s_cb */
 }
 
-/* esp_uartrecv_tim_cb function */
-void esp_uartrecv_tim_cb(void const * argument)
+/* ld3320_uartrecv_tim_cb function */
+void ld3320_uartrecv_tim_cb(void const * argument)
 {
-  /* USER CODE BEGIN esp_uartrecv_tim_cb */
+  /* USER CODE BEGIN ld3320_uartrecv_tim_cb */
+    char city_name[50] = {0};
+		uint8_t ret = 0;
+		
+    stm32_voice_weather_forecast_t *p_dev_st = &g_stm32_voice_weather_forecast_st;
 
-  /* USER CODE END esp_uartrecv_tim_cb */
+    if (stm32_voice_weather_forecast_analysis_ld3320_data(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf, city_name) == 0)
+    {
+        // 获取天气数据
+        memset(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf));
+        if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
+        {
+            ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
+        }
+        else
+        {
+            stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
+        }
+    }
+    // 处理完清空数据
+    memset(&p_dev_st.devices_info.p_ld3320_dev_st.uart_info_st, 0,
+           sizeof(p_dev_st.devices_info.p_ld3320_dev_st.uart_info_st));
+    /* USER CODE END ld3320_uartrecv_tim_cb */
 }
 
 /* Private application code --------------------------------------------------*/

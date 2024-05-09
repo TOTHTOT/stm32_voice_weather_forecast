@@ -2,7 +2,7 @@
  * @Description: 基于stm32的智能语音天气预报系统
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:28
- * @LastEditTime: 2024-05-08 21:27:49
+ * @LastEditTime: 2024-05-09 15:52:53
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
@@ -10,18 +10,21 @@
 #include "delay.h"
 #include "test_u8g2.h"
 #include "cJSON.h"
+#include "usart.h"
 
 /* 全局变量 */
 stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
+    // 使用的设备初始化
     .devices_info.p_syn6288_dev_st = &g_syn6288_device_st,
     .devices_info.p_esp_at_dev_st = &g_esp_at_st,
+    .devices_info.p_ld3320_dev_st = &g_ld3320_device_st,
+    // 默认显示时间
     .time_info.year = 2024,
     .time_info.month = 5,
     .time_info.day = 1,
     .time_info.hour = 17,
     .time_info.minute = 41,
     .time_info.second = 28,
-    //.devices_info.p_oled_dev_st = &g_oled_device_st,
 };
 
 
@@ -40,7 +43,6 @@ uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data
     weather_info_t *p_weather_info_st = (weather_info_t *)private_data;
     // 解析 JSON 字符串
     cJSON *root = cJSON_Parse((char *)json_data);
-    // cJSON *root = cJSON_Parse(json_string);
     if (root == NULL)
     {
         printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
@@ -108,10 +110,14 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 60, DEVICE_BUILD_TIME);
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
 
+    // 复位 esp
     HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_RESET);
     delay_xms(10);
     HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_SET);
+    // 等待 esp 稳定
     delay_xms(2000);
+    
+    // 上电获取天气数据
 #if 1
     if ((ret = esp_at_cmd_init(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
     {
@@ -136,22 +142,12 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, "init success");
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
     // INFO_PRINT("weather:%s\r\n", p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf);
-    // delay_xms(500);
 
+    // 开启ld3320中断接收
+    HAL_UART_Receive_IT(&huart3, &p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxtmp, 1);
     // 默认显示今天天气
     p_dev_st->cur_show_weather_info_index = WEATHER_INFO_INDEX_TODAY;
     u8g2_refresh_scr(p_dev_st);
-
-#if 0
-    u8g2_FirstPage(&p_dev_st->devices_info.u8g2);
-    do
-    {
-        u8g2_draw(&p_dev_st->devices_info.u8g2);
-
-        u8g2DrawTest(&p_dev_st->devices_info.u8g2);
-    } while (u8g2_NextPage(&p_dev_st->devices_info.u8g2));
-#endif
-    //delay_xms(100);
     return 0;
 
 ERROR_PRINT:
@@ -161,6 +157,38 @@ ERROR_PRINT:
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, error_buf);
     u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // 发送缓冲区内容到 OLED 显示屏
     // p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, (uint8_t *)error_buf);
-ERROR_RETURN:
+// ERROR_RETURN:
     return ret;
+}
+
+/**
+ * @name: stm32_voice_weather_forecast_analysis_ld3320_data
+ * @msg: 解析 ld3320 发送的数据
+ * @param {uint8_t} *data ld3320 发送的数据
+ * @param {char} *result 解析后的数据
+ * @return {== 0 成功; == 1 帧头错误; == 2 帧尾错误}
+ * @author: TOTHTOT
+ * @Date: 2024-05-09 14:26:32
+ */
+uint8_t stm32_voice_weather_forecast_analysis_ld3320_data(const uint8_t *data, char *result)
+{
+    #define LD3320_FRAME_HEAD 0xa0
+    #define LD3320_FRAME_TAIL 0xaa
+    uint8_t datalen = 0;
+
+    // 校验帧头
+    if (data[0] != LD3320_FRAME_HEAD)
+    {
+        return 1;
+    }
+    datalen = data[1];
+    // 校验帧尾
+    if (data[datalen + 2] != LD3320_FRAME_TAIL)
+    {
+        return 2;
+    }
+
+    // 复制数据
+    memcpy(result, &data[2], datalen);
+    return 0;
 }

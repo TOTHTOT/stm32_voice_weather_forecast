@@ -14,6 +14,7 @@
 #include "semphr.h"
 #include "stdarg.h"
 #include "stdio.h"
+#include "stm32_voice_weather_forecast.h"
 
 uint8_t USART_RX_BUF[USART_REC_LEN];  //接收缓冲,最大USART_REC_LEN个字节.
 uint8_t USART_TX_BUF[USART_SEND_LEN]; //接收缓冲,最大USART_REC_LEN个字节.
@@ -89,6 +90,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
                 }
             }
         }
+    }
+    else if(huart->Instance == USART3)
+    {
+        g_stm32_voice_weather_forecast_st.devices_info.p_ld3320_dev_st->ops_func.recv_data(g_stm32_voice_weather_forecast_st.devices_info.p_ld3320_dev_st);
     }
 }
 // 发送完成标志

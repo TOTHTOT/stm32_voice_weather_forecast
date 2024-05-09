@@ -7,6 +7,8 @@
 
 
 #include "config.h"
+#include <stdlib.h>
+#include <string.h>
 /************************************************************************************/
 //	nAsrStatus 用来在main主程序中表示程序运行的状态，不是LD3320芯片内部的状态寄存器
 //	LD_ASR_NONE:		表示没有在作ASR识别
@@ -204,6 +206,26 @@ void ExtInt0Handler(void) interrupt 0
 {
 	ProcessInt0();
 }
+
+uint8_t send_city_code(char *city_name)
+{
+    uint8_t *msg = malloc(strlen(city_name) + 1);
+    uint8_t msg_cnt= 0;
+
+    if (msg == NULL)
+    {
+        return 1;
+    }
+
+    msg[msg_cnt++] = 0xA0;                               // 协议帧头
+    msg[msg_cnt++] = strlen(city_name);                  // 数据长度
+    memcpy(&msg[msg_cnt], city_name, strlen(city_name)); // 数据内容
+    msg_cnt += strlen(city_name);
+    msg[msg_cnt++] = 0xAA; // 协议帧尾
+    PrintCom(msg);
+    return 0;
+}
+
 /***********************************************************
 * 名    称：用户执行函数
 * 功    能：识别成功后，执行动作可在此进行修改
@@ -229,7 +251,7 @@ void 	User_handle(uint8 dat)
 		case CODE_1:	 /*命令“开灯”*/
 			over_time=0;
 			SRD1 = 1;
-			PrintCom("<G>灯已打开");
+			send_city_code("")
 			break;
 		case CODE_2:	 /*命令“关灯”*/
 			over_time=0;
