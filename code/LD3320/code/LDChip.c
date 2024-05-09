@@ -267,13 +267,14 @@ uint8 LD_AsrAddFixed()
 {
     uint8 k, flag;
     uint8 nAsrAddLength;
-#define DATE_A 51 /*数组二维数值*/
+#define DATE_A 52 /*数组二维数值*/
 #define DATE_B 50 /*数组一维数值*/
     uint8 code sRecog[DATE_A][DATE_B] =
         {
             "xiao jie",
             "cha xun shang hai tian qi",
             "cha xun bei jing tian qi",
+            "cha xun guang dong tian qi",
             "cha xun guang dong tian qi",
             "cha xun guang dong shen zhen tian qi",
             "cha xun tian jin tian qi",

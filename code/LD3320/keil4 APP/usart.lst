@@ -1,10 +1,10 @@
-C51 COMPILER V9.60.0.0   USART                                                             05/08/2024 22:14:55 PAGE 1   
+C51 COMPILER V9.60.0.0   USART                                                             05/09/2024 21:05:02 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE USART
 OBJECT MODULE PLACED IN ..\obj\usart.obj
-COMPILER INVOKED BY: E:\Keil_C51\C51\BIN\C51.EXE ..\user\usart.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\code;..\user) DEBUG 
-                    -OBJECTEXTEND PRINT(.\usart.lst) TABS(2) OBJECT(..\obj\usart.obj)
+COMPILER INVOKED BY: E:\Keil_C51\C51\BIN\C51.EXE ..\user\usart.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\code;..\user) 
+                    -DEBUG OBJECTEXTEND PRINT(.\usart.lst) TABS(2) OBJECT(..\obj\usart.obj)
 
 line level    source
 
@@ -59,32 +59,43 @@ line level    source
   49   2        } 
   50   1      }
   51          
-  52          void Uart_Isr() interrupt 4 using 1
+  52          uint8_t print_hex(uint8_t *dat, uint8_t len)
   53          {
-  54   1          if (RI)
-C51 COMPILER V9.60.0.0   USART                                                             05/08/2024 22:14:55 PAGE 2   
+  54   1          uint8_t index = 0;
+C51 COMPILER V9.60.0.0   USART                                                             05/09/2024 21:05:02 PAGE 2   
 
-  55   1          {
-  56   2            RI=0;
-  57   2            RX_BUF[NUM_1]=SBUF;
-  58   2            NUM_1++;
-  59   2            if(NUM_1>=49)
-  60   2              NUM_1=0;
-  61   2            if(NUM_1>=3)
-  62   2            {
-  63   3              if(RX_BUF[NUM_1]==0xF8&&RX_BUF[NUM_1-1]==0xF8&&RX_BUF[NUM_1-2]==0xF8)
-  64   3                IAP_CONTR=0x60;   
-  65   3            }   
-  66   2          }
-  67   1      }
+  55   1      
+  56   1          for (index = 0; index < len; index++)
+  57   1          {
+  58   2              UARTSendByte(dat[index]);
+  59   2          }
+  60   1      
+  61   1          return len;
+  62   1      }
+  63          void Uart_Isr() interrupt 4 using 1
+  64          {
+  65   1          if (RI)
+  66   1          {
+  67   2            RI=0;
+  68   2            RX_BUF[NUM_1]=SBUF;
+  69   2            NUM_1++;
+  70   2            if(NUM_1>=49)
+  71   2              NUM_1=0;
+  72   2            if(NUM_1>=3)
+  73   2            {
+  74   3              if(RX_BUF[NUM_1]==0xF8&&RX_BUF[NUM_1-1]==0xF8&&RX_BUF[NUM_1-2]==0xF8)
+  75   3                IAP_CONTR=0x60;   
+  76   3            }   
+  77   2          }
+  78   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    174    ----
+   CODE SIZE        =    277    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----    ----
+   XDATA SIZE       =     53       6
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     53       3
+   DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

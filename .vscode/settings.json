@@ -70,6 +70,8 @@
     "esp_at_cmd.h": "c",
     "stdbool.h": "c",
     "delay.h": "c",
-    "ld3320.h": "c"
-}
+    "ld3320.h": "c",
+    "config.h": "c",
+    "stdlib.h": "c"
+  }
 }

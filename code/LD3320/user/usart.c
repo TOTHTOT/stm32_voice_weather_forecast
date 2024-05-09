@@ -49,6 +49,17 @@ void PrintCom(uint8_t *DAT)
 	}	
 }
 
+uint8_t print_hex(uint8_t *dat, uint8_t len)
+{
+    uint8_t index = 0;
+
+    for (index = 0; index < len; index++)
+    {
+        UARTSendByte(dat[index]);
+    }
+
+    return len;
+}
 void Uart_Isr() interrupt 4 using 1
 {
     if (RI)
