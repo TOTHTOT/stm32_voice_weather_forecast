@@ -2,7 +2,7 @@
  * @Description: ld3320 驱动
  * @Author: TOTHTOT
  * @Date: 2024-05-09 14:32:23
- * @LastEditTime: 2024-05-09 15:31:24
+ * @LastEditTime: 2024-05-09 22:36:14
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\LD3320\ld3320.c
  */
@@ -25,6 +25,7 @@ int32_t ld3320_uartrecv_intp(ld3320_device_t *p_dev_st)
     p_dev_st->uart_info_st.rxbuf[p_dev_st->uart_info_st.rxindex++] = p_dev_st->uart_info_st.rxtmp;
     // 开启rtos软件定时器
     osTimerStart(ld3320_uartrecv_timHandle, 10);
+    // printf("%#x ", p_dev_st->uart_info_st.rxtmp);
     // 开启一次接收
     HAL_UART_Receive_IT(&huart3, &p_dev_st->uart_info_st.rxtmp, 1);
     return 0;

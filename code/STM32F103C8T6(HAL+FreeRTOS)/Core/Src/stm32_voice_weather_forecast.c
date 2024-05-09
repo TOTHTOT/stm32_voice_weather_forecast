@@ -118,7 +118,7 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     delay_xms(2000);
     
     // 上电获取天气数据
-#if 1
+#if 0
     if ((ret = esp_at_cmd_init(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
     {
         goto ERROR_PRINT;

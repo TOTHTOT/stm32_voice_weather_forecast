@@ -198,7 +198,7 @@ void StartDefaultTask(void const * argument)
                 g_stm32_voice_weather_forecast_st.cur_show_weather_info_index++;
                 if (g_stm32_voice_weather_forecast_st.cur_show_weather_info_index > WEATHER_INFO_INDEX_TOMORROW)
                     g_stm32_voice_weather_forecast_st.cur_show_weather_info_index = WEATHER_INFO_INDEX_YESTERDAY;
-                INFO_PRINT("cur_show_weather_info_index = %d\r\n", g_stm32_voice_weather_forecast_st.cur_show_weather_info_index);
+                // INFO_PRINT("cur_show_weather_info_index = %d\r\n", g_stm32_voice_weather_forecast_st.cur_show_weather_info_index);
             }
             u8g2_refresh_scr(&g_stm32_voice_weather_forecast_st);
         }
@@ -258,9 +258,18 @@ void ld3320_uartrecv_tim_cb(void const * argument)
             stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
         }
     }
+    else
+    {
+        ERROR_PRINT("check rxbuf fail[%s]\r\n", p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf);
+        for(int i = 0; i < p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxindex; i++)
+        {
+            printf("%#x ", p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf[i]);
+        }
+    }
+    osTimerStop(ld3320_uartrecv_timHandle);
     // 处理完清空数据
-    memset(&p_dev_st.devices_info.p_ld3320_dev_st.uart_info_st, 0,
-           sizeof(p_dev_st.devices_info.p_ld3320_dev_st.uart_info_st));
+    memset(&p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st, 0,
+           sizeof(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st));
     /* USER CODE END ld3320_uartrecv_tim_cb */
 }
 
