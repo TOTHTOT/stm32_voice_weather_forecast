@@ -1,8 +1,8 @@
 /*
- * @Description: »ùÓÚstm32µÄÖÇÄÜÓïÒôÌìÆøÔ¤±¨ÏµÍ³
+ * @Description: åŸºäºŽstm32çš„æ™ºèƒ½è¯­éŸ³å¤©æ°”é¢„æŠ¥ç³»ç»Ÿ
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:28
- * @LastEditTime: 2024-05-09 15:52:53
+ * @LastEditTime: 2024-05-10 09:17:46
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
@@ -11,14 +11,17 @@
 #include "test_u8g2.h"
 #include "cJSON.h"
 #include "usart.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os.h"
 
-/* È«¾Ö±äÁ¿ */
+/* å…¨å±€å˜é‡ */
 stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
-    // Ê¹ÓÃµÄÉè±¸³õÊ¼»¯
+    // ä½¿ç”¨çš„è®¾å¤‡åˆå§‹åŒ–
     .devices_info.p_syn6288_dev_st = &g_syn6288_device_st,
     .devices_info.p_esp_at_dev_st = &g_esp_at_st,
     .devices_info.p_ld3320_dev_st = &g_ld3320_device_st,
-    // Ä¬ÈÏÏÔÊ¾Ê±¼ä
+    // é»˜è®¤æ˜¾ç¤ºæ—¶é—´
     .time_info.year = 2024,
     .time_info.month = 5,
     .time_info.day = 1,
@@ -30,10 +33,10 @@ stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
 
 /**
  * @name: stm32_voice_weather_forecast_analysis_json_weather
- * @msg: ½âÎö±£´æÔÚ json ÖÐµÄÌìÆøÊý¾Ý, ÌîÐ´ÔÚ p_weather_info_st ÖÐ
- * @param {char} *json_data json Êý¾Ý
- * @param {void} *private_data ÌîÐ´µÄ½á¹¹Ìå
- * @param {uint8_t} weather_info_len p_weather_info_st µÄÊýÁ¿, Ä¿Ç°ÊÇ3¸ö
+ * @msg: è§£æžä¿å­˜åœ¨ json ä¸­çš„å¤©æ°”æ•°æ®, å¡«å†™åœ¨ p_weather_info_st ä¸­
+ * @param {char} *json_data json æ•°æ®
+ * @param {void} *private_data å¡«å†™çš„ç»“æž„ä½“
+ * @param {uint8_t} weather_info_len p_weather_info_st çš„æ•°é‡, ç›®å‰æ˜¯3ä¸ª
  * @return {*}
  * @author: TOTHTOT
  * @Date: 2024-05-04 21:39:50
@@ -41,7 +44,7 @@ stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
 uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data, void *private_data, uint8_t weather_info_len)
 {
     weather_info_t *p_weather_info_st = (weather_info_t *)private_data;
-    // ½âÎö JSON ×Ö·û´®
+    // è§£æž JSON å­—ç¬¦ä¸²
     cJSON *root = cJSON_Parse((char *)json_data);
     if (root == NULL)
     {
@@ -50,15 +53,15 @@ uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data
     }
     // INFO_PRINT("json buf:%s\r\n", json_data);
 
-    // ·ÃÎÊ JSON Êý¾Ý
+    // è®¿é—® JSON æ•°æ®
     cJSON *results = cJSON_GetObjectItem(root, "results");
     cJSON *location = cJSON_GetObjectItem(results->child, "location");
     cJSON *daily = cJSON_GetObjectItem(results->child, "daily");
 
-    // Êä³ö½âÎö½á¹û
+    // è¾“å‡ºè§£æžç»“æžœ
     printf("Location: %s\r\n", cJSON_GetObjectItem(location, "name")->valuestring);
 
-    // ±éÀúÃ¿Ò»ÌìµÄÌìÆøÐÅÏ¢
+    // éåŽ†æ¯ä¸€å¤©çš„å¤©æ°”ä¿¡æ¯
     cJSON *daily_item = NULL;
     uint8_t index = 0;
     cJSON_ArrayForEach(daily_item, daily)
@@ -82,14 +85,14 @@ uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data
         }
     }
 
-    // ÊÍ·Å cJSON ¶ÔÏó
+    // é‡Šæ”¾ cJSON å¯¹è±¡
     cJSON_Delete(root);
 	return 0;
 }
 
 /**
  * @name: stm32_voice_weather_forecast_init
- * @msg: ³õÊ¼»¯Éè±¸
+ * @msg: åˆå§‹åŒ–è®¾å¤‡
  * @param {stm32_voice_weather_forecast_t} *p_dev_st
  * @return {*}
  * @author: TOTHTOT
@@ -108,23 +111,23 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, "start init, soft ver:");
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 40, DEVICE_BUILD_DATE);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 60, DEVICE_BUILD_TIME);
-    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // ·¢ËÍ»º³åÇøÄÚÈÝµ½ OLED ÏÔÊ¾ÆÁ
+    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // å‘é€ç¼“å†²åŒºå†…å®¹åˆ° OLED æ˜¾ç¤ºå±
 
-    // ¸´Î» esp
+    // å¤ä½ esp
     HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_RESET);
     delay_xms(10);
     HAL_GPIO_WritePin(ESP_RST_IO_GPIO_Port, ESP_RST_IO_Pin, GPIO_PIN_SET);
-    // µÈ´ý esp ÎÈ¶¨
+    // ç­‰å¾… esp ç¨³å®š
     delay_xms(2000);
     
-    // ÉÏµç»ñÈ¡ÌìÆøÊý¾Ý
+    // ä¸Šç”µèŽ·å–å¤©æ°”æ•°æ®
 #if 0
     if ((ret = esp_at_cmd_init(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
     {
         goto ERROR_PRINT;
     }
 
-    // »ñÈ¡ÌìÆøÊý¾Ý, ²¢½âÎö
+    // èŽ·å–å¤©æ°”æ•°æ®, å¹¶è§£æž
     memset(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf));
     if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
     {
@@ -140,22 +143,29 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
     u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_t0_11_te);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, "init success");
-    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // ·¢ËÍ»º³åÇøÄÚÈÝµ½ OLED ÏÔÊ¾ÆÁ
+    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // å‘é€ç¼“å†²åŒºå†…å®¹åˆ° OLED æ˜¾ç¤ºå±
     // INFO_PRINT("weather:%s\r\n", p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf);
 
-    // ¿ªÆôld3320ÖÐ¶Ï½ÓÊÕ
+    // å¼€å¯ld3320ä¸­æ–­æŽ¥æ”¶
     HAL_UART_Receive_IT(&huart3, &p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxtmp, 1);
-    // Ä¬ÈÏÏÔÊ¾½ñÌìÌìÆø
+    // é»˜è®¤æ˜¾ç¤ºä»Šå¤©å¤©æ°”
     p_dev_st->cur_show_weather_info_index = WEATHER_INFO_INDEX_TODAY;
     u8g2_refresh_scr(p_dev_st);
+
+    // èŽ·å–ç½‘ç»œæ—¶é—´
+
+    // å¼€å¯è½¯ä»¶å®šæ—¶å™¨
+    extern osTimerId time_1sHandle;
+    osTimerStart(time_1sHandle, 1000);
+
     return 0;
 
-ERROR_PRINT:
+// ERROR_PRINT:
     sprintf(error_buf, "init fail ret = %d", ret);
     u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
     u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_t0_11_te);
     u8g2_DrawStr(&p_dev_st->devices_info.u8g2, 5, 20, error_buf);
-    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // ·¢ËÍ»º³åÇøÄÚÈÝµ½ OLED ÏÔÊ¾ÆÁ
+    u8g2_SendBuffer(&p_dev_st->devices_info.u8g2); // å‘é€ç¼“å†²åŒºå†…å®¹åˆ° OLED æ˜¾ç¤ºå±
     // p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, (uint8_t *)error_buf);
 // ERROR_RETURN:
     return ret;
@@ -163,10 +173,10 @@ ERROR_PRINT:
 
 /**
  * @name: stm32_voice_weather_forecast_analysis_ld3320_data
- * @msg: ½âÎö ld3320 ·¢ËÍµÄÊý¾Ý
- * @param {uint8_t} *data ld3320 ·¢ËÍµÄÊý¾Ý
- * @param {char} *result ½âÎöºóµÄÊý¾Ý
- * @return {== 0 ³É¹¦; == 1 Ö¡Í·´íÎó; == 2 Ö¡Î²´íÎó}
+ * @msg: è§£æž ld3320 å‘é€çš„æ•°æ®
+ * @param {uint8_t} *data ld3320 å‘é€çš„æ•°æ®
+ * @param {char} *result è§£æžåŽçš„æ•°æ®
+ * @return {== 0 æˆåŠŸ; == 1 å¸§å¤´é”™è¯¯; == 2 å¸§å°¾é”™è¯¯}
  * @author: TOTHTOT
  * @Date: 2024-05-09 14:26:32
  */
@@ -176,19 +186,78 @@ uint8_t stm32_voice_weather_forecast_analysis_ld3320_data(const uint8_t *data, c
     #define LD3320_FRAME_TAIL 0xaa
     uint8_t datalen = 0;
 
-    // Ð£ÑéÖ¡Í·
+    // æ ¡éªŒå¸§å¤´
     if (data[0] != LD3320_FRAME_HEAD)
     {
         return 1;
     }
     datalen = data[1];
-    // Ð£ÑéÖ¡Î²
+    // æ ¡éªŒå¸§å°¾
     if (data[datalen + 2] != LD3320_FRAME_TAIL)
     {
         return 2;
     }
 
-    // ¸´ÖÆÊý¾Ý
+    // å¤åˆ¶æ•°æ®
     memcpy(result, &data[2], datalen);
     return 0;
 }
+
+/**
+ * @name: system_time_increase
+ * @msg: è®¡ç®—ç³»ç»Ÿæ—¶é—´, è¿”å›ž unix æ—¶é—´
+ * @param {time_info_t} *p_time_info_st
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-10 09:03:20
+ */
+uint32_t system_time_increase(time_info_t *p_time_info_st)
+{
+    uint8_t month_day_tab[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; // æ¯æœˆçš„å¤©æ•°
+    p_time_info_st->millisecond++;
+    if (p_time_info_st->millisecond > 0) // 1msè¿›å…¥ä¸­æ–­ä¸€æ¬¡ï¼Œ1000æ¬¡å°±æ˜¯1ms
+    {
+        p_time_info_st->millisecond = 0L;
+        p_time_info_st->second++; // ç§’è¿›ä½
+        if (p_time_info_st->second >= 60)
+        {
+            // printf("æ—¶é—´:%s\r\n", now_time);
+            p_time_info_st->second = 0;
+            p_time_info_st->minute++; // åˆ†é’Ÿè¿›ä½
+            if (p_time_info_st->minute >= 60)
+            {
+                p_time_info_st->minute = 0;
+                p_time_info_st->hour++; // å°æ—¶è¿›ä½
+                if (p_time_info_st->hour >= 24)
+                {
+                    p_time_info_st->hour = 0;
+                    p_time_info_st->day++; // å¤©è¿›ä½
+                    if (p_time_info_st->day > (((p_time_info_st->year % 4 == 0) && (p_time_info_st->month == 2)) ? month_day_tab[p_time_info_st->month] + 1 : month_day_tab[p_time_info_st->month]))
+                    {
+                        p_time_info_st->day = 1;
+                        p_time_info_st->month++; // æœˆè¿›ä½
+                        if (p_time_info_st->month > 12)
+                        {
+                            p_time_info_st->month = 1;
+                            p_time_info_st->year++; // å¹´è¿›ä½
+                            if (p_time_info_st->year > 99)
+                            {
+                                p_time_info_st->year = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // è®¡ç®—UNIXæ—¶é—´æˆ³
+    uint32_t unix_time = ((p_time_info_st->year - 70) * 31536000UL) +
+                         (((p_time_info_st->year - 69) / 4) * 86400UL) +
+                         ((p_time_info_st->month <= 2 && (p_time_info_st->year % 4 == 0)) ? 86400UL : 0) +
+                         ((p_time_info_st->day - 1) * 86400UL) +
+                         (p_time_info_st->hour * 3600UL) +
+                         (p_time_info_st->minute * 60UL) +
+                         p_time_info_st->second;
+    return unix_time;
+}
+

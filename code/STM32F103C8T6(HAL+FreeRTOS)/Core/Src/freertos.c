@@ -232,7 +232,7 @@ void led_task(void const * argument)
 void time_1s_cb(void const * argument)
 {
   /* USER CODE BEGIN time_1s_cb */
-
+    system_time_increase(&g_stm32_voice_weather_forecast_st.time_info);
   /* USER CODE END time_1s_cb */
 }
 
