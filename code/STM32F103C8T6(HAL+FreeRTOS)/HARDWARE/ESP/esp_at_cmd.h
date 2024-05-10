@@ -45,6 +45,10 @@
 #define ESP_AT_CMD_CWJAP_STATUS "AT+CWJAP_DEF?\r\n"
 #define ESP_AT_CMD_CWJAP_STATUS_ACK ESP_01S_WIFI_NAME
 
+// 关闭 CIPSTART 连接
+#define ESP_AT_CMD_CIPCLOSE "AT+CIPCLOSE\r\n"
+#define ESP_AT_CMD_CIPCLOSE_ACK "OK"
+
 /* 获取网络时间 */
 // TCP/IP连接模式为单连接模式 
 #define ESP_AT_CMD_GETTIME_CIPMUX_SINGLE "AT+CIPMUX=0\r\n"
@@ -59,7 +63,7 @@
 
 // 准备发送数据到已经建立的TCP连接
 #define ESP_AT_CMD_GETTIME_CIPSEND_PREPARE "AT+CIPSEND\r\n"
-#define ESP_AT_CMD_GETTIME_CIPSEND_PREPARE_ACK "> "
+#define ESP_AT_CMD_GETTIME_CIPSEND_PREPARE_ACK ">"
 
 // 退出发送模式
 #define ESP_AT_CMD_GETTIME_EXIT_SEND_MODE "+++"
@@ -94,6 +98,9 @@ typedef struct esp_at
         uint8_t (*get_weather)(struct esp_at *p_dev_st, const char *city);
         uint8_t (*analysis_json_weather)(const char *json_data, void *p_weather_info_st, uint8_t weather_info_len);
         uint8_t (*get_time)(struct esp_at *p_dev_st);
+        uint8_t (*exit_cmd_mode)(struct esp_at *p_dev_st);
+        uint8_t (*closecip)(struct esp_at *p_dev_st);
+
     } ops_func;
 } esp_at_t;
 /* 全局函数 */

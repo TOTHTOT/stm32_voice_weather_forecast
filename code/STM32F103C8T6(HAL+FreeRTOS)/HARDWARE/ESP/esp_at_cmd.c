@@ -2,7 +2,7 @@
  * @Description: esp at指令相关功能, 使用阻塞接收方式接收数据, 使用 cjson 需要足够的 heap 大小
  * @Author: TOTHTOT
  * @Date: 2024-05-04 11:53:13
- * @LastEditTime: 2024-05-10 14:02:04
+ * @LastEditTime: 2024-05-10 21:32:52
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\esp_at_cmd.c
  */
@@ -101,6 +101,7 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
             return 0;
         if (strlen((char *)p_dev_st->uart_info_st.rxbuf) >= acklen)
         {
+            // INFO_PRINT("recv = %s\r\n", p_dev_st->uart_info_st.rxbuf);
             return 0;
         }
         else
@@ -160,7 +161,6 @@ uint8_t esp_at_cmd_get_time(esp_at_t *p_dev_st)
             ret = 5;
             goto ERROR_RETURN;
         }
-        esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 2000);
     }
     return 0;
 
@@ -256,15 +256,45 @@ uint8_t esp_at_get_weather(struct esp_at *p_dev_st, const char *city)
         {
             ret = 4;
             goto ERROR_RETURN;
-        }
-        // 退出发送数据模式
-        esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 2000);
+        }   
         return ret;
     }
     else
         return 5;
 ERROR_RETURN:
     return ret;
+}
+
+/**
+ * @name: esp_at_cmd_exit_cmd_mode
+ * @msg: 退出由 AT+CIPSEND 进入的命令模式
+ * @param {esp_at} *p_dev_st
+ * @return { == 0  成功; == 1 失败}
+ * @author: TOTHTOT
+ * @Date: 2024-05-10 21:06:02
+ */
+uint8_t esp_at_cmd_exit_cmd_mode(struct esp_at *p_dev_st)
+{
+    // 退出发送数据模式
+    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 2000) != 0)
+        return 1;
+    return 0;
+}
+
+/**
+ * @name: esp_at_cmd_closecip
+ * @msg: 关闭 cip , 不管处理命令返回值
+ * @param {esp_at} *p_dev_st
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-10 21:28:35
+ */
+uint8_t esp_at_cmd_closecip(struct esp_at *p_dev_st)
+{
+    // 退出发送数据模式
+    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPCLOSE, strlen(ESP_AT_CMD_CIPCLOSE), NULL, 0, 2000) != 0)
+        return 1;
+    return 0;
 }
 
 /* 全局变量 */
@@ -276,6 +306,8 @@ esp_at_t g_esp_at_st = {
     .ops_func.get_weather = esp_at_get_weather,
     .ops_func.delay_ms = delay_xms,
     .ops_func.get_time = esp_at_cmd_get_time,
+    .ops_func.exit_cmd_mode = esp_at_cmd_exit_cmd_mode,
+    .ops_func.closecip = esp_at_cmd_closecip,
     //.ops_func.analysis_json_weather = esp_at_analysis_json_weather,
 };
 
@@ -296,11 +328,11 @@ uint8_t esp_at_cmd_init(esp_at_t *p_dev_st)
     if (p_dev_st->dev_is_ok == false)
         return 1;
     // 启动延迟确保esp稳定了再获取状态
-    p_dev_st->ops_func.delay_ms(3000);
+    p_dev_st->ops_func.delay_ms(4000);
 
     // 验证是否连接WiFi
     p_dev_st->dev_is_connect_wifi = p_dev_st->ops_func.check_wifi_is_connected(p_dev_st);
-    INFO_PRINT("state = %d, buf = %s\r\n", p_dev_st->dev_is_connect_wifi, p_dev_st->uart_info_st.rxbuf);
+    // INFO_PRINT("state = %d, buf = %s\r\n", p_dev_st->dev_is_connect_wifi, p_dev_st->uart_info_st.rxbuf);
     // 没连接WiFi才尝试连接wifi
     if (p_dev_st->dev_is_connect_wifi == false)
     {
