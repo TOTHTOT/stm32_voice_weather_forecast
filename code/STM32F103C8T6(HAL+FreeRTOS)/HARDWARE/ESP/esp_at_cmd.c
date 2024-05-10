@@ -2,7 +2,7 @@
  * @Description: esp at指令相关功能, 使用阻塞接收方式接收数据, 使用 cjson 需要足够的 heap 大小
  * @Author: TOTHTOT
  * @Date: 2024-05-04 11:53:13
- * @LastEditTime: 2024-05-08 21:38:54
+ * @LastEditTime: 2024-05-10 14:02:04
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\esp_at_cmd.c
  */
@@ -78,7 +78,7 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
  * @param {char} *cmd 命令
  * @param {uint16_t} cmdlen 命令长度
  * @param {char} *ack 应答 ack, 如果ack 传入 null, 就根据 acklen 判断是否接收成功
- * @param {uint16_t} acklen ack 长度
+ * @param {uint16_t} acklen ack 长度, ack和acklen 都为0 不检测是否正确, 直接返回成功
  * @param {uint32_t} timeout 超时时间
  * @return { == 0 成功; == 1, 接收错误; == 2, ack 不匹配; == 3, 接收长度小于 acklen}
  * @author: TOTHTOT
@@ -96,6 +96,9 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
     // 如果 ack 为 null, 就根据 acklen 判断是否接收成功
     if (ack == NULL)
     {
+        // acklen 等于0不检测直接返回成功
+        if (acklen == 0)
+            return 0;
         if (strlen((char *)p_dev_st->uart_info_st.rxbuf) >= acklen)
         {
             return 0;
@@ -115,6 +118,54 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
 
         return 0;
     }
+}
+
+/**
+ * @name: esp_at_cmd_get_time
+ * @msg: 获取网络时间, 执行成功数据保存在rxbuf中
+ * @param {esp_at_t} *p_dev_st
+ * @return { == 0 成功;  > 0 失败}
+ * @author: TOTHTOT
+ * @Date: 2024-05-10 13:49:51
+ */
+uint8_t esp_at_cmd_get_time(esp_at_t *p_dev_st)
+{
+    uint8_t ret = 0;
+
+    // 先判断是否连接成功WiFi
+    if (p_dev_st->ops_func.check_wifi_is_connected(p_dev_st) == true)
+    {
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPMUX_SINGLE, sizeof(ESP_AT_CMD_GETTIME_CIPMUX_SINGLE), ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK, strlen(ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK), 2000) != 0)
+        {
+            ret = 1;
+            goto ERROR_RETURN;
+        }
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPSTART_TCP, sizeof(ESP_AT_CMD_GETTIME_CIPSTART_TCP), ESP_AT_CMD_GETTIME_CIPSTART_TCP_ACk, strlen(ESP_AT_CMD_GETTIME_CIPSTART_TCP_ACk), 2000) != 0)
+        {
+            ret = 2;
+            goto ERROR_RETURN;
+        }
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT, sizeof(ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT), ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK, strlen(ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK), 2000) != 0)
+        {
+            ret = 3;
+            goto ERROR_RETURN;
+        }
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPSEND_PREPARE, sizeof(ESP_AT_CMD_GETTIME_CIPSEND_PREPARE), ESP_AT_CMD_GETTIME_CIPSEND_PREPARE_ACK, strlen(ESP_AT_CMD_GETTIME_CIPSEND_PREPARE_ACK), 2000) != 0)
+        {
+            ret = 4;
+            goto ERROR_RETURN;
+        }
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_HTTP_GET, sizeof(ESP_AT_CMD_GETTIME_HTTP_GET), NULL, ESP_AT_CMD_GETTIME_HTTP_GET_ACK, 2000) != 0)
+        {
+            ret = 5;
+            goto ERROR_RETURN;
+        }
+        esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 2000);
+    }
+    return 0;
+
+ERROR_RETURN:
+    return  ret;
 }
 
 /**
@@ -206,6 +257,8 @@ uint8_t esp_at_get_weather(struct esp_at *p_dev_st, const char *city)
             ret = 4;
             goto ERROR_RETURN;
         }
+        // 退出发送数据模式
+        esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 2000);
         return ret;
     }
     else
@@ -222,6 +275,7 @@ esp_at_t g_esp_at_st = {
     .ops_func.check_device_is_avaliable = esp_is_avaliable,
     .ops_func.get_weather = esp_at_get_weather,
     .ops_func.delay_ms = delay_xms,
+    .ops_func.get_time = esp_at_cmd_get_time,
     //.ops_func.analysis_json_weather = esp_at_analysis_json_weather,
 };
 

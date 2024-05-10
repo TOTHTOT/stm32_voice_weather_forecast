@@ -2,7 +2,7 @@
  * @Description: 基于stm32的智能语音天气预报系统
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:28
- * @LastEditTime: 2024-05-10 09:17:46
+ * @LastEditTime: 2024-05-10 14:22:40
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
@@ -30,7 +30,51 @@ stm32_voice_weather_forecast_t g_stm32_voice_weather_forecast_st = {
     .time_info.second = 28,
 };
 
+static void parse_datetime(const char *datetime_str, time_info_t *time_info) {
+    sscanf(datetime_str, "%hu-%hhu-%hhu %hhu:%hhu:%hhu",
+           &time_info->year, &time_info->month, &time_info->day,
+           &time_info->hour, &time_info->minute, &time_info->second);
+    time_info->millisecond = 0; // 毫秒默认为 0，你也可以根据需要进行解析
+}
 
+/**
+ * @name: stm32_voice_weather_forecast_analysis_json_time
+ * @msg: 解析时间信息
+ * @param {char} *json_data 串口数据
+ * @param {void} *private_data 时间结构体
+ * @return { == 0 成功; != 0 失败}
+ * @author: TOTHTOT
+ * @Date: 2024-05-10 14:21:42
+ */
+uint8_t stm32_voice_weather_forecast_analysis_json_time(char *json_data, void *private_data)
+{
+    time_info_t *p_time_info_st = (time_info_t *)private_data;
+
+     // 解析 JSON 字符串
+    cJSON *root = cJSON_Parse((char *)json_data);
+    if (root == NULL)
+    {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return 1;
+    }
+    // INFO_PRINT("json buf:%s\r\n", json_data);
+
+    // 访问 JSON 数据
+    // 从根节点中获取 result 对象
+    cJSON *result = cJSON_GetObjectItem(root, "result");
+    if (result == NULL) {
+        ERROR_PRINT("result object not found!\n");
+        cJSON_Delete(root);
+        return 2;
+    }
+
+    // 输出解析结果
+    cJSON *datetime_1 = cJSON_GetObjectItem(result, "datetime_1");
+    parse_datetime(datetime_1->valuestring, p_time_info_st);
+    // 释放 cJSON 对象
+    cJSON_Delete(root);
+	return 0;
+}
 /**
  * @name: stm32_voice_weather_forecast_analysis_json_weather
  * @msg: 解析保存在 json 中的天气数据, 填写在 p_weather_info_st 中
@@ -121,14 +165,29 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     delay_xms(2000);
     
     // 上电获取天气数据
-#if 0
+#if (ESP_AT_CMD_ENABLE == 1)
     if ((ret = esp_at_cmd_init(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
     {
         goto ERROR_PRINT;
     }
+    // 获取网络时间
+#if (ESP_AT_CMD_ENABLE == 1)
+    // 获取天气数据, 并解析
+    if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_time(p_dev_st->devices_info.p_esp_at_dev_st)) != 0)
+    {
+        ERROR_PRINT("get_time() fail[%d]\r\n", ret);
+        return 4;
+    }
+    else
+    {
+        stm32_voice_weather_forecast_analysis_json_time((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, &p_dev_st->time_info);
+        // 开启软件定时器
+        extern osTimerId time_1sHandle;
+        osTimerStart(time_1sHandle, 1000);
+    }
+#endif
 
     // 获取天气数据, 并解析
-    memset(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf));
     if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
     {
         ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
@@ -152,15 +211,9 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     p_dev_st->cur_show_weather_info_index = WEATHER_INFO_INDEX_TODAY;
     u8g2_refresh_scr(p_dev_st);
 
-    // 获取网络时间
-
-    // 开启软件定时器
-    extern osTimerId time_1sHandle;
-    osTimerStart(time_1sHandle, 1000);
-
     return 0;
 
-// ERROR_PRINT:
+ERROR_PRINT:
     sprintf(error_buf, "init fail ret = %d", ret);
     u8g2_ClearBuffer(&p_dev_st->devices_info.u8g2);
     u8g2_SetFont(&p_dev_st->devices_info.u8g2, u8g2_font_t0_11_te);

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 /* 宏定义 */
+#define ESP_AT_CMD_ENABLE 1
 #define ESP_01S_WIFI_NAME "esp-2.4G"       // esp 连接wifi名称
 #define ESP_01S_WIFI_PASSWORD "12345678.." // esp 连接wifi密码
 
@@ -43,6 +44,31 @@
 // 查询是否连接wifi
 #define ESP_AT_CMD_CWJAP_STATUS "AT+CWJAP_DEF?\r\n"
 #define ESP_AT_CMD_CWJAP_STATUS_ACK ESP_01S_WIFI_NAME
+
+/* 获取网络时间 */
+// TCP/IP连接模式为单连接模式 
+#define ESP_AT_CMD_GETTIME_CIPMUX_SINGLE "AT+CIPMUX=0\r\n"
+#define ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK "OK"
+// 建立TCP连接到目标服务器
+#define ESP_AT_CMD_GETTIME_CIPSTART_TCP "AT+CIPSTART=\"TCP\",\"api.k780.com\",80\r\n"
+#define ESP_AT_CMD_GETTIME_CIPSTART_TCP_ACk "OK"
+
+// 设置ESP8266为透传模式
+#define ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT "AT+CIPMODE=1\r\n"
+#define ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK "OK"
+
+// 准备发送数据到已经建立的TCP连接
+#define ESP_AT_CMD_GETTIME_CIPSEND_PREPARE "AT+CIPSEND\r\n"
+#define ESP_AT_CMD_GETTIME_CIPSEND_PREPARE_ACK "> "
+
+// 退出发送模式
+#define ESP_AT_CMD_GETTIME_EXIT_SEND_MODE "+++"
+#define ESP_AT_CMD_GETTIME_EXIT_SEND_MODE_ACK 0 // 没有回复
+
+// 发送HTTP GET请求到服务器，获取时间相关的数据
+#define ESP_AT_CMD_GETTIME_HTTP_GET "GET http://api.k780.com:88/?app=life.time&appkey=10003&sign=b59bc3ef6191eb9f747dd4e83c99f2a4&format=json&HTTP/1.1\r\n"
+#define ESP_AT_CMD_GETTIME_HTTP_GET_ACK 190
+
 /* 类型定义 */
 typedef struct esp_at
 {
@@ -67,6 +93,7 @@ typedef struct esp_at
         bool (*check_wifi_is_connected)(struct esp_at *p_dev_st);
         uint8_t (*get_weather)(struct esp_at *p_dev_st, const char *city);
         uint8_t (*analysis_json_weather)(const char *json_data, void *p_weather_info_st, uint8_t weather_info_len);
+        uint8_t (*get_time)(struct esp_at *p_dev_st);
     } ops_func;
 } esp_at_t;
 /* 全局函数 */
