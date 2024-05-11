@@ -241,14 +241,14 @@ void ld3320_uartrecv_tim_cb(void const * argument)
 {
   /* USER CODE BEGIN ld3320_uartrecv_tim_cb */
     char city_name[50] = {0};
-		uint8_t ret = 0;
+	uint8_t ret = 0;
 		
     stm32_voice_weather_forecast_t *p_dev_st = &g_stm32_voice_weather_forecast_st;
 
     if (stm32_voice_weather_forecast_analysis_ld3320_data(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf, city_name) == 0)
     {
+        INFO_PRINT("city_name = %s\r\n", city_name);
         // 获取天气数据
-        memset(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf));
         if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
         {
             ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
@@ -256,6 +256,8 @@ void ld3320_uartrecv_tim_cb(void const * argument)
         else
         {
             stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
+            p_dev_st->devices_info.p_esp_at_dev_st->ops_func.exit_cmd_mode(p_dev_st->devices_info.p_esp_at_dev_st);
+            p_dev_st->devices_info.p_esp_at_dev_st->ops_func.closecip(p_dev_st->devices_info.p_esp_at_dev_st);
         }
     }
     else
