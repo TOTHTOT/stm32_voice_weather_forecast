@@ -2,7 +2,7 @@
  * @Description: 基于stm32的智能语音天气预报系统
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:28
- * @LastEditTime: 2024-05-10 21:34:06
+ * @LastEditTime: 2024-05-11 21:30:18
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Src\stm32_voice_weather_forecast.c
  */
@@ -107,7 +107,7 @@ uint8_t stm32_voice_weather_forecast_analysis_json_weather(const char *json_data
     cJSON *daily = cJSON_GetObjectItem(results->child, "daily");
 
     // 输出解析结果
-    // printf("Location: %s\r\n", cJSON_GetObjectItem(location, "name")->valuestring);
+    printf("Location: %s\r\n", cJSON_GetObjectItem(location, "name")->valuestring);
 
     // 遍历每一天的天气信息
     cJSON *daily_item = NULL;
@@ -197,7 +197,7 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
 #endif
 
     // 获取天气数据, 并解析
-    if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
+    if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, DEFAULT_CITY)) != 0)
     {
         ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
         return 3;
@@ -221,7 +221,8 @@ uint8_t stm32_voice_weather_forecast_init(stm32_voice_weather_forecast_t *p_dev_
     // 默认显示今天天气
     p_dev_st->cur_show_weather_info_index = WEATHER_INFO_INDEX_TODAY;
     u8g2_refresh_scr(p_dev_st);
-
+    delay_xms(100);
+    // p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, "init success");
     return 0;
 
 ERROR_PRINT:
@@ -324,4 +325,3 @@ uint32_t system_time_increase(time_info_t *p_time_info_st)
                          p_time_info_st->second;
     return unix_time;
 }
-

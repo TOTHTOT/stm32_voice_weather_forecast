@@ -54,7 +54,40 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+/**
+ * @name: stm32_voice_weather_forecast_en_weather_to_hz
+ * @msg: Ó¢ÎÄÌìÆø×ªºº×ÖÌìÆø, ·ÅÔÚÕâÊÇÒòÎªÒªºº×Ö±àÂëÎÊÌâ, Õâ¸öÎÄ¼þÊ¹ÓÃgb2312±àÂë, 
+ * ±ðµÄÎÄ¼þutf-8±àÂë, ·Å±ðµÄµØ·½»á±àÒë±¨´í
+ * @param {char} *weather_en
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-11 21:40:38
+ */
+char *stm32_voice_weather_forecast_en_weather_to_hz(char *weather_en)
+{
+    char *weather_hz = malloc(10);
+	memset(weather_hz, 0, 10);
+    // char *result = NULL;
+    
+    if (strstr(weather_en, "Clear") != NULL)
+    {
+        strcpy(weather_hz, "Çç");
+    }
+    else if (strstr(weather_en, "Overcast") != NULL)
+    {
+        strcpy(weather_hz, "ÒõÌì");
+    }
+    else if (strstr(weather_en, "Cloudy") != NULL)
+    {
+        strcpy(weather_hz, "¶àÔÆ");
+    }
+    else
+    {
+        strcpy(weather_hz, "Óê");
+    }
 
+    return weather_hz;
+}
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId LED_TASKHandle;
@@ -154,7 +187,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityRealtime, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of LED_TASK */
@@ -178,6 +211,8 @@ void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
     uint32_t loop_times = 0;
+    stm32_voice_weather_forecast_t *p_dev_st = &g_stm32_voice_weather_forecast_st;
+
     if (stm32_voice_weather_forecast_init(&g_stm32_voice_weather_forecast_st) != 0)
     {
         g_stm32_voice_weather_forecast_st.system_is_ready = false;
@@ -192,7 +227,7 @@ void StartDefaultTask(void const * argument)
 
         if (loop_times %10 == 0)
         {
-            // 500ms åˆ·æ–°å±å¹•å¤©æ°”ä¿¡æ¯
+            // 500ms Ë¢ÐÂÆÁÄ»ÌìÆøÐÅÏ¢
             if (loop_times % 50 == 0)
             {
                 g_stm32_voice_weather_forecast_st.cur_show_weather_info_index++;
@@ -202,6 +237,55 @@ void StartDefaultTask(void const * argument)
             }
             u8g2_refresh_scr(&g_stm32_voice_weather_forecast_st);
         }
+
+        if (p_dev_st->system_is_ready == true && p_dev_st->get_weather_flag == true)
+        {
+            char city_name[50] = {0};
+            uint8_t ret = 0;
+
+
+            if (stm32_voice_weather_forecast_analysis_ld3320_data(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf, city_name) == 0)
+            {
+                INFO_PRINT("city_name = %s\r\n", city_name);
+                // »ñÈ¡ÌìÆøÊý¾Ý
+                if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, city_name)) != 0)
+                {
+                    ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
+                    p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, "»ñÈ¡ÌìÆøÊý¾ÝÊ§°Ü1");
+                }
+                else
+                {
+                    char frame_info[100] = {0};
+                    weather_info_t weather_info_st[3]; // ÌìÆøÐÅÏ¢, 0: ×òÌì, 1: ½ñÌì, 2: Ã÷Ìì;
+                    stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, weather_info_st, 3);
+                    delay_ms(100);
+                    sprintf(frame_info, "ÌìÆø%s×î¸ßÎÂ¶È%d¶ÈÊª¶È%d·çËÙ%2.1fÃ×Ã¿Ãë",
+                            stm32_voice_weather_forecast_en_weather_to_hz((char *)weather_info_st[WEATHER_INFO_INDEX_TODAY].weather),
+                            weather_info_st[WEATHER_INFO_INDEX_TODAY].temperature_high,
+					        weather_info_st[WEATHER_INFO_INDEX_TODAY].humidity,
+                            weather_info_st[WEATHER_INFO_INDEX_TODAY].wind_speed);
+                    p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, (uint8_t *)frame_info);
+                }
+            }
+            #if 0
+            else
+            {
+                ERROR_PRINT("check rxbuf fail[%s]\r\n", p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf);
+                for (int i = 0; i < p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxindex; i++)
+                {
+                    printf("%#x ", p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf[i]);
+                }
+                p_dev_st->devices_info.p_syn6288_dev_st->ops_func.send_frame_info(p_dev_st->devices_info.p_syn6288_dev_st, 0, "»ñÈ¡ÌìÆøÊý¾ÝÊ§°Ü2");
+            }
+            #endif
+            p_dev_st->devices_info.p_esp_at_dev_st->ops_func.exit_cmd_mode(p_dev_st->devices_info.p_esp_at_dev_st);
+            p_dev_st->devices_info.p_esp_at_dev_st->ops_func.closecip(p_dev_st->devices_info.p_esp_at_dev_st);
+            // ´¦ÀíÍêÇå¿ÕÊý¾Ý
+            memset(&p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st, 0,
+                   sizeof(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st));
+            p_dev_st->get_weather_flag = false;
+        }
+        
         loop_times++;
         osDelay(DEFAULT_THR_DELAY_TIME_MS);
     }
@@ -217,15 +301,20 @@ void StartDefaultTask(void const * argument)
 /* USER CODE END Header_led_task */
 void led_task(void const * argument)
 {
-  /* USER CODE BEGIN led_task */
-  /* Infinite loop */
-  for(;;)
-  {
+    /* USER CODE BEGIN led_task */
+    /* Infinite loop */
+    uint32_t loop_times = 0;
+    for (;;)
+    {
         // INFO_PRINT("led\r\n");
-        LED0_TOGGLE;
-        delay_ms(500);
-  }
-  /* USER CODE END led_task */
+        if (loop_times % 10 == 0)
+            LED0_TOGGLE;
+
+        
+        loop_times++;
+        delay_ms(50);
+    }
+    /* USER CODE END led_task */
 }
 
 /* time_1s_cb function */
@@ -240,38 +329,9 @@ void time_1s_cb(void const * argument)
 void ld3320_uartrecv_tim_cb(void const * argument)
 {
   /* USER CODE BEGIN ld3320_uartrecv_tim_cb */
-    char city_name[50] = {0};
-	uint8_t ret = 0;
-		
     stm32_voice_weather_forecast_t *p_dev_st = &g_stm32_voice_weather_forecast_st;
-
-    if (stm32_voice_weather_forecast_analysis_ld3320_data(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf, city_name) == 0)
-    {
-        INFO_PRINT("city_name = %s\r\n", city_name);
-        // èŽ·å–å¤©æ°”æ•°æ®
-        if ((ret = p_dev_st->devices_info.p_esp_at_dev_st->ops_func.get_weather(p_dev_st->devices_info.p_esp_at_dev_st, "fujianfuzhou")) != 0)
-        {
-            ERROR_PRINT("get_weather() fail[%d]\r\n", ret);
-        }
-        else
-        {
-            stm32_voice_weather_forecast_analysis_json_weather((char *)p_dev_st->devices_info.p_esp_at_dev_st->uart_info_st.rxbuf, p_dev_st->weather_info_st, 3);
-            p_dev_st->devices_info.p_esp_at_dev_st->ops_func.exit_cmd_mode(p_dev_st->devices_info.p_esp_at_dev_st);
-            p_dev_st->devices_info.p_esp_at_dev_st->ops_func.closecip(p_dev_st->devices_info.p_esp_at_dev_st);
-        }
-    }
-    else
-    {
-        ERROR_PRINT("check rxbuf fail[%s]\r\n", p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf);
-        for(int i = 0; i < p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxindex; i++)
-        {
-            printf("%#x ", p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st.rxbuf[i]);
-        }
-    }
     osTimerStop(ld3320_uartrecv_timHandle);
-    // å¤„ç†å®Œæ¸…ç©ºæ•°æ®
-    memset(&p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st, 0,
-           sizeof(p_dev_st->devices_info.p_ld3320_dev_st->uart_info_st));
+    p_dev_st->get_weather_flag = true;
     /* USER CODE END ld3320_uartrecv_tim_cb */
 }
 

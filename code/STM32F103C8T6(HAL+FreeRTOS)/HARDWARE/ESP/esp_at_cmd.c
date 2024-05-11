@@ -1,15 +1,15 @@
 /*
- * @Description: esp atæŒ‡ä»¤ç›¸å…³åŠŸèƒ½, ä½¿ç”¨é˜»å¡æ¥æ”¶æ–¹å¼æ¥æ”¶æ•°æ®, ä½¿ç”¨ cjson éœ€è¦è¶³å¤Ÿçš„ heap å¤§å°
+ * @Description: esp atÖ¸ÁîÏà¹Ø¹¦ÄÜ, Ê¹ÓÃ×èÈû½ÓÊÕ·½Ê½½ÓÊÕÊı¾İ, Ê¹ÓÃ cjson ĞèÒª×ã¹»µÄ heap ´óĞ¡
  * @Author: TOTHTOT
  * @Date: 2024-05-04 11:53:13
- * @LastEditTime: 2024-05-10 21:32:52
+ * @LastEditTime: 2024-05-11 20:28:10
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\HARDWARE\ESP\esp_at_cmd.c
  */
 
 #include "esp_at_cmd.h"
 
-/* ç”¨æˆ·å®ç°å‡½æ•°å¼€å§‹ */
+/* ÓÃ»§ÊµÏÖº¯Êı¿ªÊ¼ */
 #include "usart.h"
 #include "usart1.h"
 #include "stm32_voice_weather_forecast.h"
@@ -17,10 +17,10 @@
 #include "delay.h"
 /**
  * @name: esp_at_uart_send_data
- * @msg: esp çš„ä¸²å£å‘é€å‡½æ•°
- * @param {uint8_t} *data å‘é€æ•°æ®
- * @param {uint16_t} len å‘é€é•¿åº¦
- * @return { < 0 å¤±è´¥, è¿”å›é”™è¯¯ç ; >= 0 å‘é€é•¿åº¦ }
+ * @msg: esp µÄ´®¿Ú·¢ËÍº¯Êı
+ * @param {uint8_t} *data ·¢ËÍÊı¾İ
+ * @param {uint16_t} len ·¢ËÍ³¤¶È
+ * @return { < 0 Ê§°Ü, ·µ»Ø´íÎóÂë; >= 0 ·¢ËÍ³¤¶È }
  * @author: TOTHTOT
  * @Date: 2024-04-16 14:07:14
  */
@@ -37,11 +37,11 @@ int32_t esp_at_uart_send_data(uint8_t *data, uint16_t len)
 
 /**
  * @name: esp_at_uart_recv_data
- * @msg: æ¥æ”¶æŒ‡å®šé•¿åº¦å­—ç¬¦ä¸², é˜»å¡æ¥æ”¶, è¶…æ—¶æ—¶é—´ä¸º100ms, è¶…æ—¶æœªæ¥æ”¶æ»¡ä¹Ÿç®—æˆåŠŸ
- * @param {uint8_t} *recvbuf æ¥æ”¶ç¼“å†²åŒº
- * @param {uint16_t} recvlen æ¥æ”¶é•¿åº¦
- * @param {uint16_t} timeout_ms è¶…æ—¶æ—¶é—´, å•ä½: ms
- * @return {< 0 å¤±è´¥, è¿”å›é”™è¯¯ç ; >= 0 è¿”å›HAL_OK}
+ * @msg: ½ÓÊÕÖ¸¶¨³¤¶È×Ö·û´®, ×èÈû½ÓÊÕ, ³¬Ê±Ê±¼äÎª100ms, ³¬Ê±Î´½ÓÊÕÂúÒ²Ëã³É¹¦
+ * @param {uint8_t} *recvbuf ½ÓÊÕ»º³åÇø
+ * @param {uint16_t} recvlen ½ÓÊÕ³¤¶È
+ * @param {uint16_t} timeout_ms ³¬Ê±Ê±¼ä, µ¥Î»: ms
+ * @return {< 0 Ê§°Ü, ·µ»Ø´íÎóÂë; >= 0 ·µ»ØHAL_OK}
  * @author: TOTHTOT
  * @Date: 2024-04-16 15:53:44
  */
@@ -52,7 +52,7 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
     ret = HAL_UART_Receive(&huart2, recvbuf, recvlen, timeout_ms);
     if (ret != HAL_OK)
     {
-        // é”™è¯¯çš„è¯å†æ¬¡åˆ¤æ–­æ˜¯è¶…æ—¶ä½†æ˜¯æœ‰æ•°æ®è¿˜æ˜¯å…¶ä»–é”™è¯¯
+        // ´íÎóµÄ»°ÔÙ´ÎÅĞ¶ÏÊÇ³¬Ê±µ«ÊÇÓĞÊı¾İ»¹ÊÇÆäËû´íÎó
         if (ret == HAL_TIMEOUT)
         {
             int32_t len = strlen((char *)recvbuf);
@@ -69,43 +69,43 @@ int32_t esp_at_uart_recv_data(uint8_t *recvbuf, uint16_t recvlen, uint16_t timeo
     return HAL_OK;
 }
 
-/* ç”¨æˆ·å®ç°å‡½æ•°ç»“æŸ */
+/* ÓÃ»§ÊµÏÖº¯Êı½áÊø */
 
 /**
  * @name: esp_at_send_cmd_by_waitack
- * @msg: sim800l å‘é€cmd, ç­‰å¾…ackå¹¶è®¾ç½®è¶…æ—¶
- * @param {sim800l_device_t} *sim800l_dev_p è®¾å¤‡ç»“æ„ä½“
- * @param {char} *cmd å‘½ä»¤
- * @param {uint16_t} cmdlen å‘½ä»¤é•¿åº¦
- * @param {char} *ack åº”ç­” ack, å¦‚æœack ä¼ å…¥ null, å°±æ ¹æ® acklen åˆ¤æ–­æ˜¯å¦æ¥æ”¶æˆåŠŸ
- * @param {uint16_t} acklen ack é•¿åº¦, ackå’Œacklen éƒ½ä¸º0 ä¸æ£€æµ‹æ˜¯å¦æ­£ç¡®, ç›´æ¥è¿”å›æˆåŠŸ
- * @param {uint32_t} timeout è¶…æ—¶æ—¶é—´
- * @return { == 0 æˆåŠŸ; == 1, æ¥æ”¶é”™è¯¯; == 2, ack ä¸åŒ¹é…; == 3, æ¥æ”¶é•¿åº¦å°äº acklen}
+ * @msg: sim800l ·¢ËÍcmd, µÈ´ıack²¢ÉèÖÃ³¬Ê±
+ * @param {sim800l_device_t} *sim800l_dev_p Éè±¸½á¹¹Ìå
+ * @param {char} *cmd ÃüÁî
+ * @param {uint16_t} cmdlen ÃüÁî³¤¶È
+ * @param {char} *ack Ó¦´ğ ack, Èç¹ûack ´«Èë null, ¾Í¸ù¾İ acklen ÅĞ¶ÏÊÇ·ñ½ÓÊÕ³É¹¦
+ * @param {uint16_t} acklen ack ³¤¶È, ackºÍacklen ¶¼Îª0 ²»¼ì²âÊÇ·ñÕıÈ·, Ö±½Ó·µ»Ø³É¹¦
+ * @param {uint32_t} timeout ³¬Ê±Ê±¼ä
+ * @return { == 0 ³É¹¦; == 1, ½ÓÊÕ´íÎó; == 2, ack ²»Æ¥Åä; == 3, ½ÓÊÕ³¤¶ÈĞ¡ÓÚ acklen}
  * @author: TOTHTOT
  * @Date: 2024-04-16 16:19:16
  */
 uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdlen, char *ack, uint16_t acklen, uint32_t timeout)
 {
-    memset(p_dev_st->uart_info_st.rxbuf, 0, sizeof(p_dev_st->uart_info_st.rxbuf));
+    memset(&p_dev_st->uart_info_st, 0, sizeof(p_dev_st->uart_info_st));
     p_dev_st->ops_func.send_data((uint8_t *)cmd, cmdlen);
     if (p_dev_st->ops_func.recv_data(p_dev_st->uart_info_st.rxbuf,
                                      sizeof(p_dev_st->uart_info_st.rxbuf), timeout) != HAL_OK)
     {
         return 1;
     }
-    // å¦‚æœ ack ä¸º null, å°±æ ¹æ® acklen åˆ¤æ–­æ˜¯å¦æ¥æ”¶æˆåŠŸ
+    // Èç¹û ack Îª null, ¾Í¸ù¾İ acklen ÅĞ¶ÏÊÇ·ñ½ÓÊÕ³É¹¦
     if (ack == NULL)
     {
-        // acklen ç­‰äº0ä¸æ£€æµ‹ç›´æ¥è¿”å›æˆåŠŸ
+        // acklen µÈÓÚ0²»¼ì²âÖ±½Ó·µ»Ø³É¹¦
         if (acklen == 0)
             return 0;
         if (strlen((char *)p_dev_st->uart_info_st.rxbuf) >= acklen)
         {
-            // INFO_PRINT("recv = %s\r\n", p_dev_st->uart_info_st.rxbuf);
             return 0;
         }
         else
         {
+            ERROR_PRINT("len = %d, recv = %s\r\n", strlen((char *)p_dev_st->uart_info_st.rxbuf), p_dev_st->uart_info_st.rxbuf);
             return 3;
         }
     }
@@ -123,9 +123,9 @@ uint8_t esp_at_send_cmd_by_waitack(esp_at_t *p_dev_st, char *cmd, uint16_t cmdle
 
 /**
  * @name: esp_at_cmd_get_time
- * @msg: è·å–ç½‘ç»œæ—¶é—´, æ‰§è¡ŒæˆåŠŸæ•°æ®ä¿å­˜åœ¨rxbufä¸­
+ * @msg: »ñÈ¡ÍøÂçÊ±¼ä, Ö´ĞĞ³É¹¦Êı¾İ±£´æÔÚrxbufÖĞ
  * @param {esp_at_t} *p_dev_st
- * @return { == 0 æˆåŠŸ;  > 0 å¤±è´¥}
+ * @return { == 0 ³É¹¦;  > 0 Ê§°Ü}
  * @author: TOTHTOT
  * @Date: 2024-05-10 13:49:51
  */
@@ -133,10 +133,10 @@ uint8_t esp_at_cmd_get_time(esp_at_t *p_dev_st)
 {
     uint8_t ret = 0;
 
-    // å…ˆåˆ¤æ–­æ˜¯å¦è¿æ¥æˆåŠŸWiFi
+    // ÏÈÅĞ¶ÏÊÇ·ñÁ¬½Ó³É¹¦WiFi
     if (p_dev_st->ops_func.check_wifi_is_connected(p_dev_st) == true)
     {
-        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPMUX_SINGLE, sizeof(ESP_AT_CMD_GETTIME_CIPMUX_SINGLE), ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK, strlen(ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK), 2000) != 0)
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPMUX_SINGLE, sizeof(ESP_AT_CMD_GETTIME_CIPMUX_SINGLE), ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK, strlen(ESP_AT_CMD_GETTIME_CIPMUX_SINGLE_ACK), 200) != 0)
         {
             ret = 1;
             goto ERROR_RETURN;
@@ -146,7 +146,7 @@ uint8_t esp_at_cmd_get_time(esp_at_t *p_dev_st)
             ret = 2;
             goto ERROR_RETURN;
         }
-        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT, sizeof(ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT), ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK, strlen(ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK), 2000) != 0)
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT, sizeof(ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT), ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK, strlen(ESP_AT_CMD_GETTIME_CIPMODE_TRANSPARENT_ACK), 200) != 0)
         {
             ret = 3;
             goto ERROR_RETURN;
@@ -169,58 +169,10 @@ ERROR_RETURN:
 }
 
 /**
- * @name: esp_is_connect_wifi
- * @msg: æ£€æµ‹æ˜¯å¦è¿æ¥åˆ°WiFi,æ ¹æ®å›å¤çš„ä¿¡æ¯ä¸­æ˜¯å¦å«æœ‰æŒ‡å®šWiFiåç§°åˆ¤æ–­æ˜¯å¦è¿æ¥æˆåŠŸ
- * @param {esp_at_t} *p_dev_st
- * @return {*}
- * @author: TOTHTOT
- * @Date: 2024-05-04 16:56:02
- */
-bool esp_is_connect_wifi(esp_at_t *p_dev_st)
-{
-    /* æ­£å¸¸æ¥æ”¶æ˜¯è¿™ä¸ª
-    RXï¼šAT+CWJAP?
-
-    +CWJAP:"esp-2.4G","46:33:bb:ed:0e:37",1,-43
-
-    OK */
-    /*  å¦‚æœæ²¡è¿æ¥WiFi, åˆ™æ¥æ”¶åˆ°è¿™ä¸ª
-     RXï¼šAT+CWJAP?
-
-     No AP
-
-     OK */
-    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
-                                   ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 1000) == 0)
-        return true;
-    else
-    {
-       /*  p_dev_st->ops_func.delay_ms(1000);
-        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
-                                        ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 1000) == 0)
-            return true;
-        else */
-            return false;
-    }
-}
-
-bool esp_is_avaliable(esp_at_t *p_dev_st)
-{
-    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_AT, sizeof(ESP_AT_CMD_AT),
-                                   ESP_AT_CMD_AT_ACK, strlen(ESP_AT_CMD_AT_ACK), 2000) != 0)
-    {
-        // è®¾å¤‡æ‰çº¿
-        ERROR_PRINT("esp offline\r\n");
-        return false;
-    }
-    return true;
-}
-
-/**
  * @name: esp_at_get_weather
- * @msg: è·å–å¤©æ°”æ•°æ®
+ * @msg: »ñÈ¡ÌìÆøÊı¾İ
  * @param {esp_at} *p_dev_st
- * @param {char} *city åŸå¸‚åç§°
+ * @param {char} *city ³ÇÊĞÃû³Æ
  * @return {*}
  * @author: TOTHTOT
  * @Date: 2024-05-04 21:54:35
@@ -231,26 +183,26 @@ uint8_t esp_at_get_weather(struct esp_at *p_dev_st, const char *city)
     if (p_dev_st->dev_is_connect_wifi == true)
     {
         char city_buf[150] = {0};
-        // è¿æ¥åˆ°å¿ƒçŸ¥å¤©æ°”
+        // Á¬½Óµ½ĞÄÖªÌìÆø
         if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CONNECT_WEATHER, sizeof(ESP_AT_CMD_CONNECT_WEATHER), ESP_AT_CMD_CONNECT_WEATHER_ACK, strlen(ESP_AT_CMD_CONNECT_WEATHER_ACK), 2000) != 0)
         {
             ret = 1;
             goto ERROR_RETURN;
         }
 
-        // ä½¿ç”¨é€ä¼ æ¨¡å¼
-        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPMODE, sizeof(ESP_AT_CMD_CIPMODE), ESP_AT_CMD_CIPMODE_ACK, strlen(ESP_AT_CMD_CIPMODE_ACK), 2000) != 0)
+        // Ê¹ÓÃÍ¸´«Ä£Ê½
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPMODE, sizeof(ESP_AT_CMD_CIPMODE), ESP_AT_CMD_CIPMODE_ACK, strlen(ESP_AT_CMD_CIPMODE_ACK), 200) != 0)
         {
             ret = 2;
             goto ERROR_RETURN;
         }
-        // å¼€å§‹å‘é€æ•°æ®
-        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPSEND, sizeof(ESP_AT_CMD_CIPSEND), ESP_AT_CMD_CIPSEND_ACK, strlen(ESP_AT_CMD_CIPSEND_ACK), 2000) != 0)
+        // ¿ªÊ¼·¢ËÍÊı¾İ
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPSEND, sizeof(ESP_AT_CMD_CIPSEND), ESP_AT_CMD_CIPSEND_ACK, strlen(ESP_AT_CMD_CIPSEND_ACK), 200) != 0)
         {
             ret = 3;
             goto ERROR_RETURN;
         }
-        // è·å–å¤©æ°”æ•°æ®
+        // »ñÈ¡ÌìÆøÊı¾İ
         sprintf(city_buf, ESP_AT_CMD_GET_WEATHER, city);
         if (esp_at_send_cmd_by_waitack(p_dev_st, city_buf, strlen(city_buf), NULL, ESP_AT_CMD_GET_WEATHER_ACK, 2000) != 0)
         {
@@ -266,24 +218,72 @@ ERROR_RETURN:
 }
 
 /**
+ * @name: esp_is_connect_wifi
+ * @msg: ¼ì²âÊÇ·ñÁ¬½Óµ½WiFi,¸ù¾İ»Ø¸´µÄĞÅÏ¢ÖĞÊÇ·ñº¬ÓĞÖ¸¶¨WiFiÃû³ÆÅĞ¶ÏÊÇ·ñÁ¬½Ó³É¹¦
+ * @param {esp_at_t} *p_dev_st
+ * @return {*}
+ * @author: TOTHTOT
+ * @Date: 2024-05-04 16:56:02
+ */
+bool esp_is_connect_wifi(esp_at_t *p_dev_st)
+{
+    /* Õı³£½ÓÊÕÊÇÕâ¸ö
+    RX£ºAT+CWJAP?
+
+    +CWJAP:"esp-2.4G","46:33:bb:ed:0e:37",1,-43
+
+    OK */
+    /*  Èç¹ûÃ»Á¬½ÓWiFi, Ôò½ÓÊÕµ½Õâ¸ö
+     RX£ºAT+CWJAP?
+
+     No AP
+
+     OK */
+    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
+                                   ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 100) == 0)
+        return true;
+    else
+    {
+       /*  p_dev_st->ops_func.delay_ms(1000);
+        if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CWJAP_STATUS, sizeof(ESP_AT_CMD_CWJAP_STATUS),
+                                        ESP_AT_CMD_CWJAP_STATUS_ACK, strlen(ESP_AT_CMD_CWJAP_STATUS_ACK), 1000) == 0)
+            return true;
+        else */
+            return false;
+    }
+}
+
+bool esp_is_avaliable(esp_at_t *p_dev_st)
+{
+    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_AT, sizeof(ESP_AT_CMD_AT),
+                                   ESP_AT_CMD_AT_ACK, strlen(ESP_AT_CMD_AT_ACK), 200) != 0)
+    {
+        // Éè±¸µôÏß
+        ERROR_PRINT("esp offline\r\n");
+        return false;
+    }
+    return true;
+}
+
+/**
  * @name: esp_at_cmd_exit_cmd_mode
- * @msg: é€€å‡ºç”± AT+CIPSEND è¿›å…¥çš„å‘½ä»¤æ¨¡å¼
+ * @msg: ÍË³öÓÉ AT+CIPSEND ½øÈëµÄÃüÁîÄ£Ê½
  * @param {esp_at} *p_dev_st
- * @return { == 0  æˆåŠŸ; == 1 å¤±è´¥}
+ * @return { == 0  ³É¹¦; == 1 Ê§°Ü}
  * @author: TOTHTOT
  * @Date: 2024-05-10 21:06:02
  */
 uint8_t esp_at_cmd_exit_cmd_mode(struct esp_at *p_dev_st)
 {
-    // é€€å‡ºå‘é€æ•°æ®æ¨¡å¼
-    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 2000) != 0)
+    // ÍË³ö·¢ËÍÊı¾İÄ£Ê½
+    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_GETTIME_EXIT_SEND_MODE, strlen(ESP_AT_CMD_GETTIME_EXIT_SEND_MODE), NULL, 0, 100) != 0)
         return 1;
     return 0;
 }
 
 /**
  * @name: esp_at_cmd_closecip
- * @msg: å…³é—­ cip , ä¸ç®¡å¤„ç†å‘½ä»¤è¿”å›å€¼
+ * @msg: ¹Ø±Õ cip , ²»¹Ü´¦ÀíÃüÁî·µ»ØÖµ
  * @param {esp_at} *p_dev_st
  * @return {*}
  * @author: TOTHTOT
@@ -291,13 +291,13 @@ uint8_t esp_at_cmd_exit_cmd_mode(struct esp_at *p_dev_st)
  */
 uint8_t esp_at_cmd_closecip(struct esp_at *p_dev_st)
 {
-    // é€€å‡ºå‘é€æ•°æ®æ¨¡å¼
-    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPCLOSE, strlen(ESP_AT_CMD_CIPCLOSE), NULL, 0, 2000) != 0)
+    // ÍË³ö·¢ËÍÊı¾İÄ£Ê½
+    if (esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CIPCLOSE, strlen(ESP_AT_CMD_CIPCLOSE), NULL, 0, 100) != 0)
         return 1;
     return 0;
 }
 
-/* å…¨å±€å˜é‡ */
+/* È«¾Ö±äÁ¿ */
 esp_at_t g_esp_at_st = {
     .ops_func.recv_data = esp_at_uart_recv_data,
     .ops_func.send_data = esp_at_uart_send_data,
@@ -313,9 +313,9 @@ esp_at_t g_esp_at_st = {
 
 /**
  * @name: esp_at_cmd_init
- * @msg: åˆå§‹åŒ– esp atæŒ‡ä»¤åŠŸèƒ½
+ * @msg: ³õÊ¼»¯ esp atÖ¸Áî¹¦ÄÜ
  * @param {esp_at_t} *p_dev_st
- * @return { == 0 æˆåŠŸ; != 0 å¤±è´¥}
+ * @return { == 0 ³É¹¦; != 0 Ê§°Ü}
  * @author: TOTHTOT
  * @Date: 2024-05-04 16:39:20
  */
@@ -323,27 +323,27 @@ uint8_t esp_at_cmd_init(esp_at_t *p_dev_st)
 {
 //    uint8_t ret = 0;
     char wifi_connect_buf[90] = {0};
-    // éªŒè¯è®¾å¤‡æ˜¯å¦å­˜åœ¨
+    // ÑéÖ¤Éè±¸ÊÇ·ñ´æÔÚ
     p_dev_st->dev_is_ok = p_dev_st->ops_func.check_device_is_avaliable(p_dev_st);
     if (p_dev_st->dev_is_ok == false)
         return 1;
-    // å¯åŠ¨å»¶è¿Ÿç¡®ä¿espç¨³å®šäº†å†è·å–çŠ¶æ€
-    p_dev_st->ops_func.delay_ms(4000);
+    // Æô¶¯ÑÓ³ÙÈ·±£espÎÈ¶¨ÁËÔÙ»ñÈ¡×´Ì¬
+    p_dev_st->ops_func.delay_ms(7000);
 
-    // éªŒè¯æ˜¯å¦è¿æ¥WiFi
+    // ÑéÖ¤ÊÇ·ñÁ¬½ÓWiFi
     p_dev_st->dev_is_connect_wifi = p_dev_st->ops_func.check_wifi_is_connected(p_dev_st);
     // INFO_PRINT("state = %d, buf = %s\r\n", p_dev_st->dev_is_connect_wifi, p_dev_st->uart_info_st.rxbuf);
-    // æ²¡è¿æ¥WiFiæ‰å°è¯•è¿æ¥wifi
+    // Ã»Á¬½ÓWiFi²Å³¢ÊÔÁ¬½Ówifi
     if (p_dev_st->dev_is_connect_wifi == false)
     {
         sprintf(wifi_connect_buf, ESP_AT_CMD_CONNECT_WIFI, ESP_01S_WIFI_NAME, ESP_01S_WIFI_PASSWORD);
-        // è¿æ¥WiFi
+        // Á¬½ÓWiFi
         if (esp_at_send_cmd_by_waitack(p_dev_st, wifi_connect_buf, strlen(wifi_connect_buf), ESP_AT_CMD_CONNECT_WIFI_CONNECTED, strlen(ESP_AT_CMD_CONNECT_WIFI_CONNECTED), 3000) != 0)
                     return 2;
         p_dev_st->dev_is_connect_wifi = true;
         p_dev_st->ops_func.delay_ms(2000);
     }
-    // è®¾ç½®è¿æ¥æ¨¡å¼
+    // ÉèÖÃÁ¬½ÓÄ£Ê½
     esp_at_send_cmd_by_waitack(p_dev_st, ESP_AT_CMD_CONNECT_MODE, sizeof(ESP_AT_CMD_CONNECT_MODE), ESP_AT_CMD_CONNECT_MODE_ACK, strlen(ESP_AT_CMD_CONNECT_MODE_ACK), 2000);
 
     return 0;

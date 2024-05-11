@@ -2,7 +2,7 @@
  * @Description: 基于stm32的智能语音天气预报系统
  * @Author: TOTHTOT
  * @Date: 2024-05-01 17:41:37
- * @LastEditTime: 2024-05-08 20:57:22
+ * @LastEditTime: 2024-05-11 21:36:00
  * @LastEditors: TOTHTOT
  * @FilePath: \stm32_voice_weather_forecast\code\STM32F103C8T6(HAL+FreeRTOS)\Core\Inc\stm32_voice_weather_forecast.h
  */
@@ -24,7 +24,7 @@
 #define DEVICE_BUILD_DATE __DATE__
 #define DEVICE_BUILD_TIME __TIME__
 #define DEFAULT_THR_DELAY_TIME_MS 10 // StartDefaultTask() 线程延时时间, 单位:ms
-
+#define DEFAULT_CITY "fujianfuzhou"
 /* 类型定义 */
 typedef struct time_info
 {
@@ -67,6 +67,7 @@ typedef struct stm32_voice_weather_forecast
     } cur_show_weather_info_index; // 当前显示的天气, 0: 昨天, 1: 今天, 2: 明天;
 
     bool system_is_ready; // == true 表示系统已经初始化完成, 其他任务才能开始执行
+    bool get_weather_flag;
 } stm32_voice_weather_forecast_t;
 
 /* 全局变量 */
